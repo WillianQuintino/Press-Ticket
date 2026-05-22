@@ -13,27 +13,20 @@ import {
   PushPin,
   Star,
 } from "@mui/icons-material";
-import {
-  Box,
-  CircularProgress,
-  IconButton,
-  styled
-} from "@mui/material";
-import {
-  blue,
-  red
-} from "@mui/material/colors";
+import { Box, CircularProgress, IconButton, styled } from "@mui/material";
+import { blue, red } from "@mui/material/colors";
 
 import { useTheme } from "@mui/material/styles";
-import {
-  format,
-  isSameDay,
-  isToday,
-  isYesterday,
-  parseISO
-} from "date-fns";
+import { format, isSameDay, isToday, isYesterday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Fragment, useCallback, useEffect, useReducer, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import WhatsMarked from "react-whatsmarked";
@@ -74,7 +67,8 @@ const DateSeparator = styled("div")(({ theme }) => ({
   alignItems: "center",
   margin: "16px 0",
   "& > span": {
-    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : '#e1f5fe',
+    backgroundColor:
+      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e1f5fe",
     color: theme.palette.text.primary,
     padding: "6px 12px",
     borderRadius: "8px",
@@ -82,23 +76,23 @@ const DateSeparator = styled("div")(({ theme }) => ({
     fontWeight: 500,
     textTransform: "uppercase",
     boxShadow: theme.shadows[1],
-  }
+  },
 }));
 
 const MessagesListStyled = styled("div")(({ theme }) => ({
   backgroundImage: theme.backgroundImage,
-    display: "flex",
-    flexDirection: "column",
-    flexGrow: 1,
-    padding: "20px 20px 20px 20px",
-    overflowY: "scroll",
-    [theme.breakpoints.down("sm")]: {
-      paddingBottom: "90px",
-    },
-    ...theme.scrollbarStyles,
-    "& > div:not(:first-child)": {
-      marginTop: "5px",
-    }
+  display: "flex",
+  flexDirection: "column",
+  flexGrow: 1,
+  padding: "20px 20px 20px 20px",
+  overflowY: "scroll",
+  [theme.breakpoints.down("sm")]: {
+    paddingBottom: "90px",
+  },
+  ...theme.scrollbarStyles,
+  "& > div:not(:first-child)": {
+    marginTop: "5px",
+  },
 }));
 
 const CircularProgressStyled = styled(CircularProgress)(({ theme }) => ({
@@ -160,7 +154,10 @@ const SystemMessage = styled("div")(({ theme }) => ({
   padding: "6px 12px",
   maxWidth: "80%",
   textAlign: "center",
-  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+  backgroundColor:
+    theme.palette.mode === "dark"
+      ? "rgba(255, 255, 255, 0.08)"
+      : "rgba(0, 0, 0, 0.05)",
   color: theme.palette.text.secondary,
   borderRadius: "8px",
   fontSize: "13px",
@@ -170,34 +167,37 @@ const SystemMessage = styled("div")(({ theme }) => ({
 
 const MessageRight = styled("div")(({ theme }) => ({
   marginLeft: 20,
-    marginTop: 2,
-    minWidth: 100,
-    maxWidth: 600,
-    height: "auto",
-    display: "block",
-    position: "relative",
-    "&:hover #messageActionsButton": {
-      display: "flex",
-      position: "absolute",
-      top: 0,
-      right: 0,
-    },
-    whiteSpace: "pre-wrap",
-    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.primary.dark : theme.palette.success.light,
-    color: theme.palette.text.primary,
-    alignSelf: "flex-end",
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 0,
-    paddingLeft: 5,
-    paddingRight: 5,
-    paddingTop: 5,
-    paddingBottom: 0,
-    boxShadow: theme.shadows[1],
-    transition: "background-color 0.5s ease-in-out",
-    fontSize: "14px",
-    wordBreak: "break-word",
+  marginTop: 2,
+  minWidth: 100,
+  maxWidth: 600,
+  height: "auto",
+  display: "block",
+  position: "relative",
+  "&:hover #messageActionsButton": {
+    display: "flex",
+    position: "absolute",
+    top: 0,
+    right: 0,
+  },
+  whiteSpace: "pre-wrap",
+  backgroundColor:
+    theme.palette.mode === "dark"
+      ? theme.palette.primary.dark
+      : theme.palette.success.light,
+  color: theme.palette.text.primary,
+  alignSelf: "flex-end",
+  borderTopLeftRadius: 8,
+  borderTopRightRadius: 8,
+  borderBottomLeftRadius: 8,
+  borderBottomRightRadius: 0,
+  paddingLeft: 5,
+  paddingRight: 5,
+  paddingTop: 5,
+  paddingBottom: 0,
+  boxShadow: theme.shadows[1],
+  transition: "background-color 0.5s ease-in-out",
+  fontSize: "14px",
+  wordBreak: "break-word",
 }));
 
 const IconButtonStyled = styled(IconButton)(({ theme }) => ({
@@ -208,7 +208,7 @@ const IconButtonStyled = styled(IconButton)(({ theme }) => ({
   backgroundColor: "inherit",
   opacity: "90%",
   "&:hover, &.Mui-focusVisible": { backgroundColor: "inherit" },
-}))
+}));
 
 const MessageContactNameStyled = styled("span")(({ theme }) => ({
   display: "flex",
@@ -232,16 +232,16 @@ const ContactImage = styled("img")(({ theme }) => ({
   objectFit: "cover",
   border: `2px solid ${theme.palette.primary.light}`,
   boxShadow: "0 3px 8px rgba(0,0,0,0.15)",
-	transition: "all 0.3s ease",
-	"&:hover": {
-		transform: "scale(1.05)",
-		boxShadow: "0 5px 12px rgba(0,0,0,0.2)",
-	},
-	[theme.breakpoints.down("sm")]: {
-		width: "42px",
-		height: "42px",
-		borderRadius: "12px",
-	},
+  transition: "all 0.3s ease",
+  "&:hover": {
+    transform: "scale(1.05)",
+    boxShadow: "0 5px 12px rgba(0,0,0,0.2)",
+  },
+  [theme.breakpoints.down("sm")]: {
+    width: "42px",
+    height: "42px",
+    borderRadius: "12px",
+  },
 }));
 
 const MessageItem = styled("div")(({ theme, message }) => ({
@@ -258,16 +258,18 @@ const MessageItem = styled("div")(({ theme, message }) => ({
   ...(message.isEdited && {
     padding: "3px 120px 6px 6px",
   }),
-  ...(message.mediaUrl && !message.body && {
-  }),
+  ...(message.mediaUrl && !message.body && {}),
 }));
 
 const VideoStyled = styled("video")(({ theme }) => ({
   width: 250,
   maxHeight: 445,
   borderRadius: 8,
-  backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : theme.palette.common.white,
-  border: `1px solid ${theme.palette.mode === 'dark' ? theme.palette.divider : 'rgba(0, 0, 0, 0.1)'}`,
+  backgroundColor:
+    theme.palette.mode === "dark"
+      ? theme.palette.background.paper
+      : theme.palette.common.white,
+  border: `1px solid ${theme.palette.mode === "dark" ? theme.palette.divider : "rgba(0, 0, 0, 0.1)"}`,
   boxShadow: theme.shadows[1],
 }));
 
@@ -299,7 +301,10 @@ const DownloadMedia = styled("div")(({ theme }) => ({
 const DocumentPreview = styled("div")(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
-  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+  backgroundColor:
+    theme.palette.mode === "dark"
+      ? "rgba(255, 255, 255, 0.05)"
+      : "rgba(0, 0, 0, 0.03)",
   borderRadius: "8px",
   overflow: "hidden",
   maxWidth: "400px",
@@ -309,16 +314,20 @@ const DocumentPreview = styled("div")(({ theme }) => ({
 const DocumentThumbnail = styled("div")(({ theme }) => ({
   width: "100%",
   height: "200px",
-  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#ffffff',
+  backgroundColor:
+    theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.3)" : "#ffffff",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   position: "relative",
   overflow: "hidden",
   transition: "background-color 0.2s ease",
-  borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+  borderBottom: `1px solid ${theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)"}`,
   "&:hover": {
-    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.02)',
+    backgroundColor:
+      theme.palette.mode === "dark"
+        ? "rgba(0, 0, 0, 0.4)"
+        : "rgba(0, 0, 0, 0.02)",
   },
   "& img": {
     width: "100%",
@@ -327,7 +336,7 @@ const DocumentThumbnail = styled("div")(({ theme }) => ({
   },
   "& object": {
     border: "none",
-  }
+  },
 }));
 
 const DocumentHeader = styled("div")(({ theme }) => ({
@@ -335,7 +344,10 @@ const DocumentHeader = styled("div")(({ theme }) => ({
   alignItems: "center",
   padding: "12px",
   gap: "12px",
-  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+  backgroundColor:
+    theme.palette.mode === "dark"
+      ? "rgba(255, 255, 255, 0.08)"
+      : "rgba(0, 0, 0, 0.05)",
 }));
 
 const DocumentIcon = styled("div")(({ theme }) => ({
@@ -345,7 +357,7 @@ const DocumentIcon = styled("div")(({ theme }) => ({
   width: "48px",
   height: "48px",
   borderRadius: "8px",
-  backgroundColor: theme.palette.mode === 'dark' ? '#d32f2f' : '#e53935',
+  backgroundColor: theme.palette.mode === "dark" ? "#d32f2f" : "#e53935",
   color: "#fff",
   flexShrink: 0,
 }));
@@ -375,9 +387,12 @@ const DocumentDetails = styled("div")(({ theme }) => ({
 }));
 
 const DocumentDownloadButton = styled(IconButton)(({ theme }) => ({
-  color: theme.palette.mode === 'dark' ? '#4caf50' : '#2e7d32',
-  '&:hover': {
-    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.08)' : 'rgba(46, 125, 50, 0.08)',
+  color: theme.palette.mode === "dark" ? "#4caf50" : "#2e7d32",
+  "&:hover": {
+    backgroundColor:
+      theme.palette.mode === "dark"
+        ? "rgba(76, 175, 80, 0.08)"
+        : "rgba(46, 125, 50, 0.08)",
   },
 }));
 
@@ -416,7 +431,7 @@ const ScrollToBottomButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
-const style = document.createElement('style');
+const style = document.createElement("style");
 style.textContent = `
   @keyframes highlightMessage {
     0% { background-color: transparent; }
@@ -436,11 +451,13 @@ const reducer = (state, action) => {
 
     messages.forEach((message) => {
       if (!message || !message.id) {
-        console.warn('[LOAD_MESSAGES] Mensagem sem ID ignorada:', message);
+        console.warn("[LOAD_MESSAGES] Mensagem sem ID ignorada:", message);
         return;
       }
-      
-      const messageIndex = state.findIndex((m) => m && m.id && m.id === message.id);
+
+      const messageIndex = state.findIndex(
+        (m) => m && m.id && m.id === message.id,
+      );
       if (messageIndex !== -1) {
         state[messageIndex] = message;
       } else {
@@ -453,13 +470,15 @@ const reducer = (state, action) => {
 
   if (action.type === "ADD_MESSAGE") {
     const newMessage = action.payload;
-    
+
     if (!newMessage || !newMessage.id) {
-      console.warn('[ADD_MESSAGE] Mensagem sem ID ignorada:', newMessage);
+      console.warn("[ADD_MESSAGE] Mensagem sem ID ignorada:", newMessage);
       return state;
     }
-    
-    const messageIndex = state.findIndex((m) => m && m.id && m.id === newMessage.id);
+
+    const messageIndex = state.findIndex(
+      (m) => m && m.id && m.id === newMessage.id,
+    );
 
     if (messageIndex !== -1) {
       state[messageIndex] = newMessage;
@@ -478,43 +497,50 @@ const reducer = (state, action) => {
 
   function ToastDisplay(props) {
     return (
-    <>
-      <h4>"Mensagem apagada"</h4>
-      <WhatsMarked>{props.body}</WhatsMarked>
-    </>
+      <>
+        <h4>"Mensagem apagada"</h4>
+        <WhatsMarked>{props.body}</WhatsMarked>
+      </>
     );
   }
 
   if (action.type === "UPDATE_MESSAGE") {
     const timestamp = new Date().toISOString();
     const messageToUpdate = action.payload;
-    
+
     if (!messageToUpdate || !messageToUpdate.id) {
-      console.warn('[UPDATE_MESSAGE] Mensagem sem ID ignorada:', messageToUpdate);
+      console.warn(
+        "[UPDATE_MESSAGE] Mensagem sem ID ignorada:",
+        messageToUpdate,
+      );
       return state;
     }
 
-    const messageIndex = state.findIndex((m) => m && m.id && m.id === messageToUpdate.id);
-    
+    const messageIndex = state.findIndex(
+      (m) => m && m.id && m.id === messageToUpdate.id,
+    );
+
     if (messageIndex !== -1) {
-      const oldMessage = state[messageIndex];   
-      
+      const oldMessage = state[messageIndex];
+
       const ackChanged = oldMessage.ack !== messageToUpdate.ack;
       const bodyChanged = oldMessage.body !== messageToUpdate.body;
       const editedChanged = oldMessage.isEdited !== messageToUpdate.isEdited;
-      const oldMessagesChanged = messageToUpdate.oldMessages && 
-        (!oldMessage.oldMessages || oldMessage.oldMessages.length !== messageToUpdate.oldMessages.length);
-      
+      const oldMessagesChanged =
+        messageToUpdate.oldMessages &&
+        (!oldMessage.oldMessages ||
+          oldMessage.oldMessages.length !== messageToUpdate.oldMessages.length);
+
       if (ackChanged || bodyChanged || editedChanged || oldMessagesChanged) {
-        
         const newState = [...state];
-        newState[messageIndex] = { 
+        newState[messageIndex] = {
           ...oldMessage,
           ...messageToUpdate,
-          oldMessages: messageToUpdate.oldMessages || oldMessage.oldMessages || [],
-          _forceUpdate: Date.now()
+          oldMessages:
+            messageToUpdate.oldMessages || oldMessage.oldMessages || [],
+          _forceUpdate: Date.now(),
         };
-        
+
         if (bodyChanged || editedChanged) {
           setTimeout(() => {
             const messageElement = document.getElementById(messageToUpdate.id);
@@ -526,23 +552,22 @@ const reducer = (state, action) => {
             }
           }, 100);
         }
-        
+
         return newState;
       } else {
         const newState = [...state];
-        newState[messageIndex] = { 
-          ...oldMessage, 
+        newState[messageIndex] = {
+          ...oldMessage,
           ...messageToUpdate,
-          oldMessages: messageToUpdate.oldMessages || oldMessage.oldMessages || []
+          oldMessages:
+            messageToUpdate.oldMessages || oldMessage.oldMessages || [],
         };
         return newState;
       }
-    } 
+    }
 
     if (messageToUpdate.isDeleted === true) {
-      toast.info(<ToastDisplay
-        body={messageToUpdate.body}
-      />);
+      toast.info(<ToastDisplay body={messageToUpdate.body} />);
     }
 
     return [...state];
@@ -550,7 +575,7 @@ const reducer = (state, action) => {
 
   if (action.type === "UPDATE_MESSAGE_STATE") {
     const { messageId, ...updates } = action.payload;
-    const idx = state.findIndex(m => m && m.id === messageId);
+    const idx = state.findIndex((m) => m && m.id === messageId);
     if (idx === -1) return state;
     const newState = [...state];
     newState[idx] = { ...newState[idx], ...updates };
@@ -563,33 +588,36 @@ const reducer = (state, action) => {
 
   if (action.type === "UPDATE_MESSAGE_REACTIONS") {
     const { messageId, emoji, actionType } = action.payload;
-    
+
     if (!messageId) {
-      console.warn('[UPDATE_MESSAGE_REACTIONS] messageId está undefined');
+      console.warn("[UPDATE_MESSAGE_REACTIONS] messageId está undefined");
       return state;
     }
-    
-    const idx = state.findIndex(m => m && m.id && m.id === messageId);
-    
+
+    const idx = state.findIndex((m) => m && m.id && m.id === messageId);
+
     if (idx === -1) {
-      console.warn('[UPDATE_MESSAGE_REACTIONS] Mensagem não encontrada:', messageId);
+      console.warn(
+        "[UPDATE_MESSAGE_REACTIONS] Mensagem não encontrada:",
+        messageId,
+      );
       return state;
     }
-    
+
     const msg = state[idx];
     const current = { ...(msg.reactions || {}) };
     const currCount = current[emoji] || 0;
-    
+
     if (actionType === "update") {
       current[emoji] = currCount + 1;
     } else if (actionType === "remove") {
       current[emoji] = Math.max(0, currCount - 1);
       if (current[emoji] === 0) delete current[emoji];
     }
-    
+
     const newState = [...state];
     newState[idx] = { ...msg, reactions: current };
-    
+
     return newState;
   }
 };
@@ -606,10 +634,12 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const messageOptionsMenuOpen = Boolean(anchorEl);
   const currentTicketId = useRef(ticketId);
-  
+
   useEffect(() => {
     if (selectedMessage?.id) {
-      const updatedMessage = messagesList.find(m => m.id === selectedMessage.id);
+      const updatedMessage = messagesList.find(
+        (m) => m.id === selectedMessage.id,
+      );
       if (updatedMessage && updatedMessage !== selectedMessage) {
         setSelectedMessage(updatedMessage);
       }
@@ -623,13 +653,13 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
     selectedMessages,
     toggleMessageSelection,
     exitForwardingMode,
-    clearSelectedMessages
+    clearSelectedMessages,
   } = useForwardingMessage();
   const [forwardModalOpen, setForwardModalOpen] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(false);
   const [isViewingOldMessages, setIsViewingOldMessages] = useState(false);
   const lastScrollUpTime = useRef(0);
-  const defaultImage = '/default-profile.png';
+  const defaultImage = "/default-profile.png";
   const lastSocketEventTime = useRef(Date.now());
 
   const handleExitForwardingMode = () => {
@@ -676,17 +706,17 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
             dispatch({ type: "LOAD_MESSAGES", payload: data.messages });
             setHasMore(data.hasMore);
             setLoading(false);
-            
+
             if (pageNumber === 1) {
               setTimeout(() => {
-                const messagesContainer = document.getElementById('messagesList');
+                const messagesContainer =
+                  document.getElementById("messagesList");
                 if (messagesContainer) {
                   messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 }
               }, 100);
             }
           }
-
         } catch (err) {
           setLoading(false);
           toastError(err, t);
@@ -699,56 +729,71 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
     };
   }, [pageNumber, ticketId]);
 
-  const scrollToBottom = useCallback((force = false) => {
-    
-    if (force) {
-      const messagesContainer = document.getElementById('messagesList');
-      if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        setIsViewingOldMessages(false);
-        setShouldAutoScroll(true);
-      } else if (lastMessageRef.current) {
-        lastMessageRef.current.scrollIntoView({ behavior: "auto" });
-        setIsViewingOldMessages(false);
+  const scrollToBottom = useCallback(
+    (force = false) => {
+      if (force) {
+        const messagesContainer = document.getElementById("messagesList");
+        if (messagesContainer) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          setIsViewingOldMessages(false);
+          setShouldAutoScroll(true);
+        } else if (lastMessageRef.current) {
+          lastMessageRef.current.scrollIntoView({ behavior: "auto" });
+          setIsViewingOldMessages(false);
+        }
+      } else if (shouldAutoScroll && !isViewingOldMessages) {
+        const messagesContainer = document.getElementById("messagesList");
+        if (messagesContainer) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        } else if (lastMessageRef.current) {
+          lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
+        }
       }
-    } else if (shouldAutoScroll && !isViewingOldMessages) {
-      const messagesContainer = document.getElementById('messagesList');
-      if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      } else if (lastMessageRef.current) {
-        lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
-      }
-    }
-  }, [shouldAutoScroll, isViewingOldMessages, lastMessageRef, lastScrollUpTime, setIsViewingOldMessages]);
+    },
+    [
+      shouldAutoScroll,
+      isViewingOldMessages,
+      lastMessageRef,
+      lastScrollUpTime,
+      setIsViewingOldMessages,
+    ],
+  );
 
   useEffect(() => {
     const processMessage = (data) => {
-      
       lastSocketEventTime.current = Date.now();
-      
+
       const messageTicketId = data.ticket?.id || data.message?.ticketId;
-      
-      const messageTicketIdStr = messageTicketId ? String(messageTicketId).trim() : null;
+
+      const messageTicketIdStr = messageTicketId
+        ? String(messageTicketId).trim()
+        : null;
       const currentTicketIdStr = ticketId ? String(ticketId).trim() : null;
-      
-      if (messageTicketIdStr && currentTicketIdStr && messageTicketIdStr === currentTicketIdStr) {
-        
+
+      if (
+        messageTicketIdStr &&
+        currentTicketIdStr &&
+        messageTicketIdStr === currentTicketIdStr
+      ) {
         if (data.action === "create") {
-          const messageExists = messagesList.some(m => m.id === data.message.id);
-          
+          const messageExists = messagesList.some(
+            (m) => m.id === data.message.id,
+          );
+
           if (!messageExists) {
-            
             try {
               dispatch({ type: "ADD_MESSAGE", payload: data.message });
-              
+
               setTimeout(() => {
                 try {
                   scrollToBottom(true);
-                  
-                  const messageElement = document.getElementById(data.message.id);
+
+                  const messageElement = document.getElementById(
+                    data.message.id,
+                  );
                   if (messageElement) {
                     messageElement.classList.add("highlight-new-message");
-                    
+
                     setTimeout(() => {
                       messageElement.classList.remove("highlight-new-message");
                     }, 2000);
@@ -772,12 +817,14 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
         }
       }
     };
-    
+
     const socket = openSocket();
     const timestamp = new Date().toISOString();
-    
+
     if (!socket) {
-      console.error(`[FRONT_SOCKET_ERRO][${timestamp}] Não foi possível conectar ao socket`);
+      console.error(
+        `[FRONT_SOCKET_ERRO][${timestamp}] Não foi possível conectar ao socket`,
+      );
       return;
     }
 
@@ -785,7 +832,10 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
       try {
         processMessage(data);
       } catch (error) {
-        console.error(`[FRONT_SOCKET_ERRO_PROCESSAMENTO][${timestamp}] Erro ao processar evento appMessage:`, error);
+        console.error(
+          `[FRONT_SOCKET_ERRO_PROCESSAMENTO][${timestamp}] Erro ao processar evento appMessage:`,
+          error,
+        );
       }
     };
 
@@ -795,20 +845,23 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
     const handleMessageReaction = (data) => {
       try {
         const { messageId, emoji, action: actionType } = data || {};
-        
+
         if (!messageId) {
-          console.warn('[handleMessageReaction] messageId está undefined');
+          console.warn("[handleMessageReaction] messageId está undefined");
           return;
         }
-        
-        dispatch({ type: "UPDATE_MESSAGE_REACTIONS", payload: { messageId, emoji, actionType } });
-      } catch (e) { 
-        console.error('[handleMessageReaction] Erro ao processar reação:', e); 
+
+        dispatch({
+          type: "UPDATE_MESSAGE_REACTIONS",
+          payload: { messageId, emoji, actionType },
+        });
+      } catch (e) {
+        console.error("[handleMessageReaction] Erro ao processar reação:", e);
       }
     };
     socket.off("messageReaction", handleMessageReaction);
     socket.on("messageReaction", handleMessageReaction);
-    
+
     if (socket.connected) {
       socket.emit("joinChatBox", ticketId);
       socket.emit("syncMessages", { ticketId });
@@ -821,14 +874,13 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
 
     const handleNewMessage = (event) => {
       const { message, ticketId: messageTicketId } = event.detail;
-      
+
       if (parseInt(messageTicketId) === parseInt(ticketId)) {
-        
-        const messageExists = messagesList.some(m => m.id === message.id);
-        
+        const messageExists = messagesList.some((m) => m.id === message.id);
+
         if (!messageExists) {
           dispatch({ type: "ADD_MESSAGE", payload: message });
-          
+
           setTimeout(() => {
             scrollToBottom(true);
           }, 0);
@@ -838,67 +890,74 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
 
     const handleUpdateMessage = (event) => {
       const { message, ticketId: messageTicketId } = event.detail;
-      
+
       if (parseInt(messageTicketId) === parseInt(ticketId)) {
         dispatch({ type: "UPDATE_MESSAGE", payload: message });
       }
     };
-    
-    document.addEventListener('newMessage', handleNewMessage);
-    document.addEventListener('updateMessage', handleUpdateMessage);
+
+    document.addEventListener("newMessage", handleNewMessage);
+    document.addEventListener("updateMessage", handleUpdateMessage);
 
     let isPollingActive = true;
-    
+
     const refreshInterval = setInterval(() => {
       const timestamp = new Date().toISOString();
-      const timeSinceLastSocketUpdate = Date.now() - lastSocketEventTime.current;
-      
+      const timeSinceLastSocketUpdate =
+        Date.now() - lastSocketEventTime.current;
+
       if (timeSinceLastSocketUpdate < 5000) {
         return;
       }
-      
+
       if (!isPollingActive) {
         return;
       }
-      
+
       const fetchLatestMessages = async () => {
         try {
           isPollingActive = false;
-          
+
           const { data } = await api.get(`/messages/${ticketId}`, {
-            params: { pageNumber: 1 }
+            params: { pageNumber: 1 },
           });
-          
+
           if (data && data.messages && data.messages.length > 0) {
             let hasNewMessages = false;
             let updatedMessages = 0;
-            
-            data.messages.forEach(message => {
-              const existingMessageIndex = messagesList.findIndex(m => m.id === message.id);
-              
+
+            data.messages.forEach((message) => {
+              const existingMessageIndex = messagesList.findIndex(
+                (m) => m.id === message.id,
+              );
+
               if (existingMessageIndex === -1) {
                 dispatch({ type: "ADD_MESSAGE", payload: message });
                 hasNewMessages = true;
-              } else if (messagesList[existingMessageIndex].ack !== message.ack) {
+              } else if (
+                messagesList[existingMessageIndex].ack !== message.ack
+              ) {
                 dispatch({ type: "UPDATE_MESSAGE", payload: message });
                 updatedMessages++;
               }
             });
-            
+
             if (hasNewMessages) {
               setTimeout(() => {
                 scrollToBottom(true);
               }, 0);
             }
-          
           }
         } catch (err) {
-          console.error(`[FRONT_POLLING_ERRO][${timestamp}] Erro ao buscar mensagens recentes:`, err);
+          console.error(
+            `[FRONT_POLLING_ERRO][${timestamp}] Erro ao buscar mensagens recentes:`,
+            err,
+          );
         } finally {
           isPollingActive = true;
         }
       };
-      
+
       fetchLatestMessages();
     }, 5000);
 
@@ -906,8 +965,8 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
       socket.off("appMessage", handleAppMessage);
       socket.off("messageReaction", handleMessageReaction);
       socket.off("connect");
-      document.removeEventListener('newMessage', handleNewMessage);
-      document.removeEventListener('updateMessage', handleUpdateMessage);
+      document.removeEventListener("newMessage", handleNewMessage);
+      document.removeEventListener("updateMessage", handleUpdateMessage);
       clearInterval(refreshInterval);
       socket.emit("leaveChatBox", ticketId);
     };
@@ -919,15 +978,32 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
     if (entries.length === 0) return null;
     return (
       <span
-        onClick={() => { setReactionsMessageId(message.id); setReactionsModalOpen(true); }}
+        onClick={() => {
+          setReactionsMessageId(message.id);
+          setReactionsModalOpen(true);
+        }}
         title={t("messageReactions.open", { defaultValue: "Ver reações" })}
-        style={{ display: 'inline-flex', gap: 6, alignItems: 'center', marginRight: 6, cursor: 'pointer' }}
+        style={{
+          display: "inline-flex",
+          gap: 6,
+          alignItems: "center",
+          marginRight: 6,
+          cursor: "pointer",
+        }}
       >
         {entries.map(([emoji, count]) => (
-          <span key={`${message.id}-${emoji}`} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: 'rgba(0,0,0,0.06)', borderRadius: 12, padding: '1px 6px', fontSize: 11
-          }}>
+          <span
+            key={`${message.id}-${emoji}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              background: "rgba(0,0,0,0.06)",
+              borderRadius: 12,
+              padding: "1px 6px",
+              fontSize: 11,
+            }}
+          >
             <span style={{ fontSize: 13 }}>{emoji}</span>
             <span>{count}</span>
           </span>
@@ -948,32 +1024,32 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
     "buttons_response",
     "notification_template",
     "groups_v4_invite",
-    "event_creation"
+    "event_creation",
   ];
 
   const prevScrollTopRef = useRef(0);
-  
+
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     const prevScrollTop = prevScrollTopRef.current;
 
     const scrollPosition = scrollHeight - scrollTop - clientHeight;
-    
+
     const isScrollingUp = scrollTop < prevScrollTop;
-    
+
     prevScrollTopRef.current = scrollTop;
-    
+
     if (isScrollingUp && scrollPosition > 300) {
       setIsViewingOldMessages(true);
       lastScrollUpTime.current = Date.now();
     }
-    
+
     if (scrollPosition < 100) {
       setIsViewingOldMessages(false);
     }
-    
+
     setShowScrollButton(scrollPosition > 100);
-    
+
     setShouldAutoScroll(scrollPosition < 100);
 
     if (scrollTop === 0) {
@@ -1003,23 +1079,23 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
 
   const processLocationMessage = (message) => {
     if (!message || !message.body) return message;
-    
+
     if (message.mediaType !== "location") return message;
-    
+
     const processedMessage = { ...message };
-    
+
     try {
-      const parts = message.body.split('|');
+      const parts = message.body.split("|");
       if (parts.length < 2) return message;
-      
+
       processedMessage.locationData = {
         image: parts[0],
         link: parts[1],
-        description: parts.length > 2 ? parts[2] : null
+        description: parts.length > 2 ? parts[2] : null,
       };
-      
+
       processedMessage.body = "[Localização]";
-      
+
       return processedMessage;
     } catch (error) {
       console.error("Erro ao processar mensagem de localização:", error);
@@ -1029,14 +1105,17 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
 
   const checkMessageMedia = (message) => {
     const processedMessage = processLocationMessage(message);
-    
-    if (processedMessage.mediaType === "location" && processedMessage.locationData) {
+
+    if (
+      processedMessage.mediaType === "location" &&
+      processedMessage.locationData
+    ) {
       try {
         const { image, link, description } = processedMessage.locationData;
-        
+
         return (
-          <div className="location-container" style={{ width: '100%' }}>
-            <LocationPreview 
+          <div className="location-container" style={{ width: "100%" }}>
+            <LocationPreview
               image={image}
               link={link}
               description={description}
@@ -1047,18 +1126,17 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
         console.error("Erro ao exibir localização:", error);
         return null;
       }
-    }
-    else if (message.mediaType === "vcard") {
+    } else if (message.mediaType === "vcard") {
       try {
         let contactData = message.body;
         let contact = "";
         let numbers = [];
-        
-        if (typeof contactData === 'string') {
+
+        if (typeof contactData === "string") {
           try {
             const parsedData = JSON.parse(contactData);
             contact = parsedData.name || "";
-            
+
             if (parsedData.allNumbers && Array.isArray(parsedData.allNumbers)) {
               numbers = parsedData.allNumbers;
             } else if (parsedData.number) {
@@ -1079,52 +1157,68 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                 }
               }
             }
-            
+
             if (obj.length > 0) {
-              numbers = obj.map(item => item.number);
+              numbers = obj.map((item) => item.number);
             }
           }
         }
-        
-        return <VcardPreview contact={contact} numbers={numbers} />
+
+        return <VcardPreview contact={contact} numbers={numbers} />;
       } catch (error) {
         console.error("Error processing vcard in MessagesList:", error);
-        return <VcardPreview contact="Contato" numbers={["Número não disponível"]} />
+        return (
+          <VcardPreview contact="Contato" numbers={["Número não disponível"]} />
+        );
       }
-    }
-    else if (message.mediaType === "multi_vcard") {
+    } else if (message.mediaType === "multi_vcard") {
       if (message.body !== null && message.body !== "") {
         try {
           let contacts = message.body;
 
-          if (typeof contacts === 'string') {
+          if (typeof contacts === "string") {
             try {
               contacts = JSON.parse(contacts);
             } catch (parseError) {
               console.error("Erro ao fazer parse do JSON:", parseError);
-              const cleanContacts = contacts.replace(/\\n/g, '').replace(/\\r/g, '').replace(/\\\\/g, '').replace(/\\"/g, '"');
+              const cleanContacts = contacts
+                .replace(/\\n/g, "")
+                .replace(/\\r/g, "")
+                .replace(/\\\\/g, "")
+                .replace(/\\"/g, '"');
               try {
                 contacts = JSON.parse(cleanContacts);
               } catch (cleanParseError) {
-                console.error("Erro ao fazer parse do JSON após limpeza:", cleanParseError);
+                console.error(
+                  "Erro ao fazer parse do JSON após limpeza:",
+                  cleanParseError,
+                );
                 return null;
               }
             }
           }
 
           if (!Array.isArray(contacts)) {
-            console.warn("O corpo da mensagem não é um array, convertendo:", contacts);
+            console.warn(
+              "O corpo da mensagem não é um array, convertendo:",
+              contacts,
+            );
             contacts = [contacts];
           }
 
           if (contacts.length > 0) {
             return (
-              <Box sx={{
-                display: "flex",
-                justifyContent: message.fromMe ? "flex-end" : "flex-start",
-                width: "100%"
-              }}>
-                <MultiVcardPreview contacts={contacts} timestamp={message.createdAt} />
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: message.fromMe ? "flex-end" : "flex-start",
+                  width: "100%",
+                }}
+              >
+                <MultiVcardPreview
+                  contacts={contacts}
+                  timestamp={message.createdAt}
+                />
               </Box>
             );
           }
@@ -1132,70 +1226,69 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
           console.error("Erro ao processar mensagem multi_vcard:", error);
         }
       }
-    }
-    else if (message.mediaType === "image") {
-      return <ModalImageCors imageUrl={message.mediaUrl} isDeleted={message.isDeleted} />;
-    } else if (message.mediaType === "audio") {
-      return <Audio url={message.mediaUrl} />
-    } else if (message.mediaType === "video") {
+    } else if (message.mediaType === "image") {
       return (
-        <VideoStyled
-          src={message.mediaUrl}
-          controls
+        <ModalImageCors
+          imageUrl={message.mediaUrl}
+          isDeleted={message.isDeleted}
         />
       );
+    } else if (message.mediaType === "audio") {
+      return <Audio url={message.mediaUrl} />;
+    } else if (message.mediaType === "video") {
+      return <VideoStyled src={message.mediaUrl} controls />;
     } else {
       const filename = message.body || "documento";
       const docInfo = getDocumentInfo(filename, message.mediaType);
       const DocumentIconComponent = docInfo.icon;
-      
+
       const fileSize = message.fileSize || null;
       const isPdf = docInfo.type === "PDF";
-      
+
       return (
         <DocumentPreview>
           {/* Thumbnail/Preview do documento */}
           {isPdf && message.mediaUrl && (
             <DocumentThumbnail
-              onClick={() => window.open(message.mediaUrl, '_blank')}
-              sx={{ cursor: 'pointer' }}
+              onClick={() => window.open(message.mediaUrl, "_blank")}
+              sx={{ cursor: "pointer" }}
             >
               <object
                 data={message.mediaUrl}
                 type="application/pdf"
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  pointerEvents: 'none',
+                  width: "100%",
+                  height: "100%",
+                  pointerEvents: "none",
                 }}
               >
                 <Box
                   sx={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexDirection: 'column',
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: "column",
                     gap: 1,
-                    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                    backgroundColor: "rgba(0, 0, 0, 0.05)",
                   }}
                 >
-                  <PictureAsPdf sx={{ fontSize: 64, color: '#d32f2f' }} />
-                  <span style={{ fontSize: '12px', color: '#666' }}>Clique para visualizar</span>
+                  <PictureAsPdf sx={{ fontSize: 64, color: "#d32f2f" }} />
+                  <span style={{ fontSize: "12px", color: "#666" }}>
+                    Clique para visualizar
+                  </span>
                 </Box>
               </object>
             </DocumentThumbnail>
           )}
-          
+
           <DocumentHeader>
             <DocumentIcon>
               <DocumentIconComponent sx={{ fontSize: 28 }} />
             </DocumentIcon>
             <DocumentInfo>
-              <DocumentName title={filename}>
-                {filename}
-              </DocumentName>
+              <DocumentName title={filename}>{filename}</DocumentName>
               <DocumentDetails>
                 {docInfo.type && <span>{docInfo.type}</span>}
                 {fileSize && (
@@ -1225,29 +1318,31 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
     if (!bytes || bytes === 0) return "Tamanho desconhecido";
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    if (bytes < 1024 * 1024 * 1024)
+      return (bytes / (1024 * 1024)).toFixed(1) + " MB";
     return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
   };
 
   const getDocumentInfo = (filename, mediaType) => {
-    if (!filename) return { icon: InsertDriveFile, type: "Documento", pages: null };
-    
-    const ext = filename.split('.').pop().toLowerCase();
-    
-    if (ext === 'pdf') {
+    if (!filename)
+      return { icon: InsertDriveFile, type: "Documento", pages: null };
+
+    const ext = filename.split(".").pop().toLowerCase();
+
+    if (ext === "pdf") {
       return { icon: PictureAsPdf, type: "PDF", pages: null };
-    } else if (['doc', 'docx'].includes(ext)) {
+    } else if (["doc", "docx"].includes(ext)) {
       return { icon: Description, type: "DOC", pages: null };
-    } else if (['xls', 'xlsx'].includes(ext)) {
+    } else if (["xls", "xlsx"].includes(ext)) {
       return { icon: Description, type: "XLS", pages: null };
-    } else if (['ppt', 'pptx'].includes(ext)) {
+    } else if (["ppt", "pptx"].includes(ext)) {
       return { icon: Description, type: "PPT", pages: null };
-    } else if (['txt'].includes(ext)) {
+    } else if (["txt"].includes(ext)) {
       return { icon: Description, type: "TXT", pages: null };
-    } else if (['zip', 'rar', '7z'].includes(ext)) {
+    } else if (["zip", "rar", "7z"].includes(ext)) {
       return { icon: InsertDriveFile, type: "ZIP", pages: null };
     }
-    
+
     return { icon: InsertDriveFile, type: ext.toUpperCase(), pages: null };
   };
 
@@ -1258,32 +1353,59 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
     // ACK_DEVICE: 2
     // ACK_READ: 3
     // ACK_PLAYED: 4
-    
+
     if (!message.fromMe) {
       return null;
     }
-    
+
     if (message.ack === -1) {
-      return <Error fontSize="small" sx={{ fontSize: 16, verticalAlign: "middle", color: "red" }} />;
+      return (
+        <Error
+          fontSize="small"
+          sx={{ fontSize: 16, verticalAlign: "middle", color: "red" }}
+        />
+      );
     }
-    
+
     if (message.ack === 0) {
-      return <AccessTime fontSize="small" sx={{ fontSize: 16, verticalAlign: "middle" }} />;
+      return (
+        <AccessTime
+          fontSize="small"
+          sx={{ fontSize: 16, verticalAlign: "middle" }}
+        />
+      );
     }
-    
+
     if (message.ack === 1) {
-      return <Done fontSize="small" sx={{ fontSize: 16, verticalAlign: "middle" }} />;
+      return (
+        <Done fontSize="small" sx={{ fontSize: 16, verticalAlign: "middle" }} />
+      );
     }
-    
+
     if (message.ack === 2) {
-      return <DoneAll fontSize="small" sx={{ fontSize: 16, verticalAlign: "middle" }} />;
+      return (
+        <DoneAll
+          fontSize="small"
+          sx={{ fontSize: 16, verticalAlign: "middle" }}
+        />
+      );
     }
-    
+
     if (message.ack === 3 || message.ack === 4) {
-      return <DoneAll fontSize="small" sx={{ fontSize: 16, verticalAlign: "middle", color: blue[500] }} />;
+      return (
+        <DoneAll
+          fontSize="small"
+          sx={{ fontSize: 16, verticalAlign: "middle", color: blue[500] }}
+        />
+      );
     }
-    
-    return <AccessTime fontSize="small" sx={{ fontSize: 16, verticalAlign: "middle", color: "orange" }} />;
+
+    return (
+      <AccessTime
+        fontSize="small"
+        sx={{ fontSize: 16, verticalAlign: "middle", color: "orange" }}
+      />
+    );
   };
 
   const renderMessageStateIcons = (msg) => {
@@ -1291,10 +1413,24 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
     return (
       <>
         {msg.isPinned && (
-          <PushPin sx={{ fontSize: 10, verticalAlign: "middle", opacity: 0.65, mr: 0.3 }} />
+          <PushPin
+            sx={{
+              fontSize: 10,
+              verticalAlign: "middle",
+              opacity: 0.65,
+              mr: 0.3,
+            }}
+          />
         )}
         {msg.isStarred && (
-          <Star sx={{ fontSize: 10, verticalAlign: "middle", opacity: 0.65, mr: 0.3 }} />
+          <Star
+            sx={{
+              fontSize: 10,
+              verticalAlign: "middle",
+              opacity: 0.65,
+              mr: 0.3,
+            }}
+          />
         )}
       </>
     );
@@ -1307,7 +1443,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
 
     const currentMessageDate = parseISO(message.createdAt);
     const previousMessage = messagesList[index - 1];
-    
+
     if (!previousMessage) {
       return null;
     }
@@ -1316,7 +1452,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
 
     if (!isSameDay(currentMessageDate, previousMessageDate)) {
       let dateLabel = "";
-      
+
       if (isToday(currentMessageDate)) {
         dateLabel = t("messagesList.message.today");
       } else if (isYesterday(currentMessageDate)) {
@@ -1377,7 +1513,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
   const scrollToMessage = async (id) => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: "smooth" });
       element.style.backgroundColor = theme.palette.primary.main;
       setTimeout(() => {
         element.style.backgroundColor = "";
@@ -1392,10 +1528,10 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
         while (!messageFound && hasMore) {
           currentPage += 1;
           const { data } = await api.get("/messages/" + ticketId, {
-            params: { pageNumber: currentPage }
+            params: { pageNumber: currentPage },
           });
 
-          if (data.messages.some(msg => msg.id === id)) {
+          if (data.messages.some((msg) => msg.id === id)) {
             messageFound = true;
           }
 
@@ -1413,7 +1549,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
         setTimeout(() => {
           const loadedElement = document.getElementById(id);
           if (loadedElement) {
-            loadedElement.scrollIntoView({ behavior: 'smooth' });
+            loadedElement.scrollIntoView({ behavior: "smooth" });
             loadedElement.style.backgroundColor = theme.palette.primary.main;
             setTimeout(() => {
               loadedElement.style.backgroundColor = "";
@@ -1460,10 +1596,10 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
   useEffect(() => {
     if (!loading && messagesList.length > 0) {
       checkScroll();
-      
+
       if (pageNumber === 1 && shouldAutoScroll) {
         setTimeout(() => {
-          const messagesContainer = document.getElementById('messagesList');
+          const messagesContainer = document.getElementById("messagesList");
           if (messagesContainer) {
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
           }
@@ -1486,7 +1622,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
           cursor: "pointer",
           fontSize: "13px",
           border: "1px solid rgba(0, 0, 0, 0.08)",
-          boxShadow: "0 1px 1px rgba(0, 0, 0, 0.1)"
+          boxShadow: "0 1px 1px rgba(0, 0, 0, 0.1)",
         }}
       >
         <div
@@ -1497,8 +1633,15 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
           }}
         ></div>
         <QuotedMsgStyled>
-          <MessageContactNameStyled style={{ fontWeight: 'bold', color: message.quotedMsg?.fromMe ? '#35cd96' : '#6bcbef' }}>
-            {!message.quotedMsg?.fromMe ? message.quotedMsg?.contact?.name : 'Você'}
+          <MessageContactNameStyled
+            style={{
+              fontWeight: "bold",
+              color: message.quotedMsg?.fromMe ? "#35cd96" : "#6bcbef",
+            }}
+          >
+            {!message.quotedMsg?.fromMe
+              ? message.quotedMsg?.contact?.name
+              : "Você"}
           </MessageContactNameStyled>
           {message.quotedMsg.mediaType === "audio" && (
             <DownloadMedia>
@@ -1508,10 +1651,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
             </DownloadMedia>
           )}
           {message.quotedMsg.mediaType === "video" && (
-            <VideoStyled
-              src={message.quotedMsg.mediaUrl}
-              controls
-            />
+            <VideoStyled src={message.quotedMsg.mediaUrl} controls />
           )}
           {message.quotedMsg.mediaType === "application" && (
             <DocumentPreview style={{ maxWidth: "250px", minWidth: "200px" }}>
@@ -1520,7 +1660,10 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                   <PictureAsPdf sx={{ fontSize: 20 }} />
                 </DocumentIcon>
                 <DocumentInfo>
-                  <DocumentName style={{ fontSize: "12px" }} title={message.quotedMsg.body || "documento"}>
+                  <DocumentName
+                    style={{ fontSize: "12px" }}
+                    title={message.quotedMsg.body || "documento"}
+                  >
                     {message.quotedMsg.body || "documento"}
                   </DocumentName>
                 </DocumentInfo>
@@ -1530,13 +1673,12 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
           {message.quotedMsg.mediaType === "image" ? (
             <ModalImageCors imageUrl={message.quotedMsg.mediaUrl} />
           ) : (
-            <div style={{ marginTop: '4px', color: 'rgba(0, 0, 0, 0.7)' }}>
+            <div style={{ marginTop: "4px", color: "rgba(0, 0, 0, 0.7)" }}>
               {message.quotedMsg?.body}
             </div>
           )}
         </QuotedMsgStyled>
       </div>
-
     );
   };
 
@@ -1545,9 +1687,12 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
       // Agrupar mensagens por albumId
       const albumGroups = {};
       const processedAlbumIds = new Set();
-      
+
       messagesList.forEach((message) => {
-        if (message.albumId && (message.mediaType === "image" || message.mediaType === "video")) {
+        if (
+          message.albumId &&
+          (message.mediaType === "image" || message.mediaType === "video")
+        ) {
           if (!albumGroups[message.albumId]) {
             albumGroups[message.albumId] = [];
           }
@@ -1557,56 +1702,71 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
 
       const viewMessagesList = messagesList.map((message, index) => {
         // Se a mensagem faz parte de um álbum e ainda não foi processada
-        if (message.albumId && albumGroups[message.albumId] && albumGroups[message.albumId].length > 1) {
+        if (
+          message.albumId &&
+          albumGroups[message.albumId] &&
+          albumGroups[message.albumId].length > 1
+        ) {
           if (processedAlbumIds.has(message.albumId)) {
             // Já renderizamos este álbum, pular esta mensagem
             return null;
           }
-          
+
           // Marcar este albumId como processado
           processedAlbumIds.add(message.albumId);
-          
+
           // Renderizar o álbum completo
           const albumMessages = albumGroups[message.albumId];
           const firstMessage = albumMessages[0];
-          
+
           if (!firstMessage.fromMe) {
             // Álbum recebido (esquerda)
-            const isSelected = selectedMessages.some(msg => albumMessages.some(am => am.id === msg.id));
+            const isSelected = selectedMessages.some((msg) =>
+              albumMessages.some((am) => am.id === msg.id),
+            );
             return (
               <Fragment key={`album-${message.albumId}`}>
                 {renderDailyTimestamps(firstMessage, index)}
                 {renderMessageDivider(firstMessage, index)}
                 {renderNumberTicket(firstMessage, index)}
-                <Box 
-                  sx={{ 
-                    display: 'flex', 
-                    alignItems: 'flex-start',
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "flex-start",
                     gap: isForwardingMode ? 1 : 0,
-                    marginBottom: 1
+                    marginBottom: 1,
                   }}
                 >
                   {isForwardingMode && (
                     <Box
-                      onClick={() => albumMessages.forEach(msg => handleMessageClick(msg))}
+                      onClick={() =>
+                        albumMessages.forEach((msg) => handleMessageClick(msg))
+                      }
                       sx={{
                         width: 20,
                         height: 20,
-                        borderRadius: '50%',
-                        border: isSelected ? 'none' : '2px solid #8696a0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
+                        borderRadius: "50%",
+                        border: isSelected ? "none" : "2px solid #8696a0",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
                         marginTop: 1,
                         flexShrink: 0,
-                        '&:hover': {
-                          backgroundColor: isSelected ? '#00a884' : 'rgba(134, 150, 160, 0.1)',
-                        }
+                        "&:hover": {
+                          backgroundColor: isSelected
+                            ? "#00a884"
+                            : "rgba(134, 150, 160, 0.1)",
+                        },
                       }}
                     >
                       {isSelected && (
-                        <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                        <svg
+                          width="12"
+                          height="9"
+                          viewBox="0 0 12 9"
+                          fill="none"
+                        >
                           <path
                             d="M4.5 6.5L1.5 3.5L0.5 4.5L4.5 8.5L11.5 1.5L10.5 0.5L4.5 6.5Z"
                             fill="white"
@@ -1616,13 +1776,20 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                       )}
                     </Box>
                   )}
-                  <MessageLeft 
+                  <MessageLeft
                     id={firstMessage.id}
-                    onClick={!isForwardingMode ? undefined : () => albumMessages.forEach(msg => handleMessageClick(msg))}
-                    sx={{ 
-                      cursor: isForwardingMode ? 'pointer' : 'default',
-                      border: isSelected ? '2px solid #00a884' : 'none',
-                      flex: 1
+                    onClick={
+                      !isForwardingMode
+                        ? undefined
+                        : () =>
+                            albumMessages.forEach((msg) =>
+                              handleMessageClick(msg),
+                            )
+                    }
+                    sx={{
+                      cursor: isForwardingMode ? "pointer" : "default",
+                      border: isSelected ? "2px solid #00a884" : "none",
+                      flex: 1,
                     }}
                   >
                     {!isForwardingMode && (
@@ -1644,7 +1811,12 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                         onClick={() => onClick(firstMessage.contact)}
                         sx={{ cursor: "pointer" }}
                       >
-                        <ContactImage src={firstMessage.contact.profilePicUrl || defaultImage} alt={firstMessage.contact?.name} />
+                        <ContactImage
+                          src={
+                            firstMessage.contact.profilePicUrl || defaultImage
+                          }
+                          alt={firstMessage.contact?.name}
+                        />
                         <MessageContactNameStyled>
                           {firstMessage.contact?.name}
                         </MessageContactNameStyled>
@@ -1653,7 +1825,14 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                     <AlbumPreview messages={albumMessages} />
                     {firstMessage.body && firstMessage.body.trim() !== "" && (
                       <MessageItem message={firstMessage}>
-                        <WhatsMarked sx={{ fontSize: 'inherit', lineHeight: 'inherit', display: 'flex', width: '100%' }}>
+                        <WhatsMarked
+                          sx={{
+                            fontSize: "inherit",
+                            lineHeight: "inherit",
+                            display: "flex",
+                            width: "100%",
+                          }}
+                        >
                           {firstMessage.body}
                         </WhatsMarked>
                       </MessageItem>
@@ -1669,28 +1848,37 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
             );
           } else {
             // Álbum enviado (direita)
-            const isSelected = selectedMessages.some(msg => albumMessages.some(am => am.id === msg.id));
+            const isSelected = selectedMessages.some((msg) =>
+              albumMessages.some((am) => am.id === msg.id),
+            );
             return (
               <Fragment key={`album-${message.albumId}`}>
                 {renderDailyTimestamps(firstMessage, index)}
                 {renderMessageDivider(firstMessage, index)}
                 {renderNumberTicket(firstMessage, index)}
-                <Box 
-                  sx={{ 
-                    display: 'flex', 
-                    alignItems: 'flex-start',
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "flex-start",
                     gap: isForwardingMode ? 1 : 0,
                     marginBottom: 1,
-                    justifyContent: 'flex-end'
+                    justifyContent: "flex-end",
                   }}
                 >
-                  <MessageRight 
+                  <MessageRight
                     id={firstMessage.id}
-                    onClick={!isForwardingMode ? undefined : () => albumMessages.forEach(msg => handleMessageClick(msg))}
-                    sx={{ 
-                      cursor: isForwardingMode ? 'pointer' : 'default',
-                      border: isSelected ? '2px solid #00a884' : 'none',
-                      flex: 1
+                    onClick={
+                      !isForwardingMode
+                        ? undefined
+                        : () =>
+                            albumMessages.forEach((msg) =>
+                              handleMessageClick(msg),
+                            )
+                    }
+                    sx={{
+                      cursor: isForwardingMode ? "pointer" : "default",
+                      border: isSelected ? "2px solid #00a884" : "none",
+                      flex: 1,
                     }}
                   >
                     {!isForwardingMode && (
@@ -1710,7 +1898,14 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                     <AlbumPreview messages={albumMessages} />
                     {firstMessage.body && firstMessage.body.trim() !== "" && (
                       <MessageItem message={firstMessage}>
-                        <WhatsMarked sx={{ fontSize: 'inherit', lineHeight: 'inherit', display: 'flex', width: '100%' }}>
+                        <WhatsMarked
+                          sx={{
+                            fontSize: "inherit",
+                            lineHeight: "inherit",
+                            display: "flex",
+                            width: "100%",
+                          }}
+                        >
                           {firstMessage.body}
                         </WhatsMarked>
                       </MessageItem>
@@ -1724,26 +1919,35 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                   </MessageRight>
                   {isForwardingMode && (
                     <Box
-                      onClick={() => albumMessages.forEach(msg => handleMessageClick(msg))}
+                      onClick={() =>
+                        albumMessages.forEach((msg) => handleMessageClick(msg))
+                      }
                       sx={{
                         width: 20,
                         height: 20,
-                        borderRadius: '50%',
-                        border: isSelected ? 'none' : '2px solid #8696a0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
+                        borderRadius: "50%",
+                        border: isSelected ? "none" : "2px solid #8696a0",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
                         marginTop: 1,
                         flexShrink: 0,
-                        backgroundColor: isSelected ? '#00a884' : 'transparent',
-                        '&:hover': {
-                          backgroundColor: isSelected ? '#00a884' : 'rgba(134, 150, 160, 0.1)',
-                        }
+                        backgroundColor: isSelected ? "#00a884" : "transparent",
+                        "&:hover": {
+                          backgroundColor: isSelected
+                            ? "#00a884"
+                            : "rgba(134, 150, 160, 0.1)",
+                        },
                       }}
                     >
                       {isSelected && (
-                        <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                        <svg
+                          width="12"
+                          height="9"
+                          viewBox="0 0 12 9"
+                          fill="none"
+                        >
                           <path
                             d="M4.5 6.5L1.5 3.5L0.5 4.5L4.5 8.5L11.5 1.5L10.5 0.5L4.5 6.5Z"
                             fill="white"
@@ -1758,29 +1962,32 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
             );
           }
         }
-        
+
         // Renderização normal para mensagens que não são álbuns
         if (message.mediaType === "event") {
           return (
             <Fragment key={message.id}>
               {renderDailyTimestamps(message, index)}
-              <SystemMessage>
-                {message.body}
-              </SystemMessage>
+              <SystemMessage>{message.body}</SystemMessage>
             </Fragment>
           );
         }
-        if (message.mediaType === "poll" || message.mediaType === "poll_creation") {
+        if (
+          message.mediaType === "poll" ||
+          message.mediaType === "poll_creation"
+        ) {
           return (
             <Fragment key={message.id}>
               {renderDailyTimestamps(message, index)}
               {renderMessageDivider(message, index)}
               {renderNumberTicket(message, index)}
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: message.fromMe ? 'flex-end' : 'flex-start',
-                padding: '8px 16px'
-              }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: message.fromMe ? "flex-end" : "flex-start",
+                  padding: "8px 16px",
+                }}
+              >
                 <PollMessage message={message} />
               </div>
             </Fragment>
@@ -1806,18 +2013,32 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                   <ContactImageContainer
                     onClick={() => onClick(message.contact)}
                     sx={{ cursor: "pointer" }}
-                  >                    
-                    <ContactImage src={message.contact.profilePicUrl || defaultImage} alt={message.contact?.name} />
+                  >
+                    <ContactImage
+                      src={message.contact.profilePicUrl || defaultImage}
+                      alt={message.contact?.name}
+                    />
                     <MessageContactNameStyled>
                       {message.contact?.name}
                     </MessageContactNameStyled>
                   </ContactImageContainer>
                 )}
                 <div>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 17" width="20" height="17">
-                    <path fill="#df3333" d="M18.2 12.1c-1.5-1.8-5-2.7-8.2-2.7s-6.7 1-8.2 2.7c-.7.8-.3 2.3.2 2.8.2.2.3.3.5.3 1.4 0 3.6-.7 3.6-.7.5-.2.8-.5.8-1v-1.3c.7-1.2 5.4-1.2 6.4-.1l.1.1v1.3c0 .2.1.4.2.6.1.2.3.3.5.4 0 0 2.2.7 3.6.7.2 0 1.4-2 .5-3.1zM5.4 3.2l4.7 4.6 5.8-5.7-.9-.8L10.1 6 6.4 2.3h2.5V1H4.1v4.8h1.3V3.2z"></path>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 17"
+                    width="20"
+                    height="17"
+                  >
+                    <path
+                      fill="#df3333"
+                      d="M18.2 12.1c-1.5-1.8-5-2.7-8.2-2.7s-6.7 1-8.2 2.7c-.7.8-.3 2.3.2 2.8.2.2.3.3.5.3 1.4 0 3.6-.7 3.6-.7.5-.2.8-.5.8-1v-1.3c.7-1.2 5.4-1.2 6.4-.1l.1.1v1.3c0 .2.1.4.2.6.1.2.3.3.5.4 0 0 2.2.7 3.6.7.2 0 1.4-2 .5-3.1zM5.4 3.2l4.7 4.6 5.8-5.7-.9-.8L10.1 6 6.4 2.3h2.5V1H4.1v4.8h1.3V3.2z"
+                    ></path>
                   </svg>
-                  <span>{t("messagesList.message.voiceVideoLost")} {format(parseISO(message.createdAt), "HH:mm")}</span>
+                  <span>
+                    {t("messagesList.message.voiceVideoLost")}{" "}
+                    {format(parseISO(message.createdAt), "HH:mm")}
+                  </span>
                 </div>
               </MessageCenter>
             </Fragment>
@@ -1829,19 +2050,26 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
               {renderDailyTimestamps(message, index)}
               {renderMessageDivider(message, index)}
               {renderNumberTicket(message, index)}
-              <MessageLeft id={message.id} sx={{ backgroundColor: "#E1F5FEEB" }}>
+              <MessageLeft
+                id={message.id}
+                sx={{ backgroundColor: "#E1F5FEEB" }}
+              >
                 {isGroup && (
                   <ContactImageContainer
                     onClick={() => onClick(message.contact)}
                     sx={{ cursor: "pointer" }}
                   >
-                    <ContactImage src={message.contact.profilePicUrl || defaultImage} alt={message.contact?.name} />
+                    <ContactImage
+                      src={message.contact.profilePicUrl || defaultImage}
+                      alt={message.contact?.name}
+                    />
                     <MessageContactNameStyled>
                       {message.contact?.name}
                     </MessageContactNameStyled>
                   </ContactImageContainer>
                 )}
-                <b>{t("messagesList.message.type")}</b>: <i>{message.mediaType}</i> <br />
+                <b>{t("messagesList.message.type")}</b>:{" "}
+                <i>{message.mediaType}</i> <br />
                 {t("messagesList.message.notCompatibleWithSystem")} <br />
                 {t("messagesList.message.viewOnMobile")} <br />
                 {renderReactions(message)}
@@ -1854,18 +2082,20 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
           );
         }
         if (!message.fromMe) {
-          const isSelected = selectedMessages.some(msg => msg.id === message.id);
+          const isSelected = selectedMessages.some(
+            (msg) => msg.id === message.id,
+          );
           return (
             <Fragment key={message.id}>
               {renderDailyTimestamps(message, index)}
               {renderMessageDivider(message, index)}
               {renderNumberTicket(message, index)}
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'flex-start',
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "flex-start",
                   gap: isForwardingMode ? 1 : 0,
-                  marginBottom: 1
+                  marginBottom: 1,
                 }}
               >
                 {isForwardingMode && (
@@ -1874,17 +2104,19 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                     sx={{
                       width: 20,
                       height: 20,
-                      borderRadius: '50%',
-                      border: isSelected ? 'none' : '2px solid #8696a0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
+                      borderRadius: "50%",
+                      border: isSelected ? "none" : "2px solid #8696a0",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
                       marginTop: 1,
                       flexShrink: 0,
-                      '&:hover': {
-                        backgroundColor: isSelected ? '#00a884' : 'rgba(134, 150, 160, 0.1)',
-                      }
+                      "&:hover": {
+                        backgroundColor: isSelected
+                          ? "#00a884"
+                          : "rgba(134, 150, 160, 0.1)",
+                      },
                     }}
                   >
                     {isSelected && (
@@ -1898,96 +2130,132 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                     )}
                   </Box>
                 )}
-                <MessageLeft 
+                <MessageLeft
                   id={message.id}
-                  onClick={!isForwardingMode ? undefined : () => handleMessageClick(message)}
-                  sx={{ 
-                    cursor: isForwardingMode ? 'pointer' : 'default',
-                    border: isSelected ? '2px solid #00a884' : 'none',
-                    flex: 1
+                  onClick={
+                    !isForwardingMode
+                      ? undefined
+                      : () => handleMessageClick(message)
+                  }
+                  sx={{
+                    cursor: isForwardingMode ? "pointer" : "default",
+                    border: isSelected ? "2px solid #00a884" : "none",
+                    flex: 1,
                   }}
                 >
-                {!isForwardingMode && (
-                  <IconButtonStyled
-                    variant="contained"
-                    size="small"
-                    id="messageActionsButton"
-                    disabled={message.isDeleted}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenMessageOptionsMenu(e, message);
-                    }}
-                  >
-                    <ExpandMore />
-                  </IconButtonStyled>
-                )}
-                {isGroup && (
-                  <ContactImageContainer
-                    onClick={() => onClick(message.contact)}
-                    sx={{ cursor: "pointer" }}
-                  >
-                    <ContactImage src={message.contact.profilePicUrl || defaultImage} alt={message.contact?.name} />
-                    <MessageContactNameStyled>
-                      {message.contact?.name}
-                    </MessageContactNameStyled>
-                  </ContactImageContainer>
-                )}
-                {message.isDeleted && (
-                  <div>
-                    <span style={{ color: red[200] }}>
-                      <Block
-                        sx={{
-                          fontSize: 18,
-                          verticalAlign: "middle",
-                          marginRight: 4,
-                          color: red[200]
-                        }}
+                  {!isForwardingMode && (
+                    <IconButtonStyled
+                      variant="contained"
+                      size="small"
+                      id="messageActionsButton"
+                      disabled={message.isDeleted}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenMessageOptionsMenu(e, message);
+                      }}
+                    >
+                      <ExpandMore />
+                    </IconButtonStyled>
+                  )}
+                  {isGroup && (
+                    <ContactImageContainer
+                      onClick={() => onClick(message.contact)}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <ContactImage
+                        src={message.contact.profilePicUrl || defaultImage}
+                        alt={message.contact?.name}
                       />
-                      <WhatsMarked>{t("messagesList.message.deleted")}</WhatsMarked>
-                    </span>
-                  </div>
-                )}
-                {(message.mediaUrl || message.mediaType === "location" || message.mediaType === "vcard"
-                  || message.mediaType === "multi_vcard"
-                ) && checkMessageMedia(message)}
-                <MessageItem message={message}>
-                  {message.quotedMsg && <div style={{ marginBottom: '8px' }}>{renderQuotedMessage(message)}</div>}
+                      <MessageContactNameStyled>
+                        {message.contact?.name}
+                      </MessageContactNameStyled>
+                    </ContactImageContainer>
+                  )}
+                  {message.isDeleted && (
+                    <div>
+                      <span style={{ color: red[200] }}>
+                        <Block
+                          sx={{
+                            fontSize: 18,
+                            verticalAlign: "middle",
+                            marginRight: 4,
+                            color: red[200],
+                          }}
+                        />
+                        <WhatsMarked>
+                          {t("messagesList.message.deleted")}
+                        </WhatsMarked>
+                      </span>
+                    </div>
+                  )}
+                  {(message.mediaUrl ||
+                    message.mediaType === "location" ||
+                    message.mediaType === "vcard" ||
+                    message.mediaType === "multi_vcard") &&
+                    checkMessageMedia(message)}
+                  <MessageItem message={message}>
+                    {message.quotedMsg && (
+                      <div style={{ marginBottom: "8px" }}>
+                        {renderQuotedMessage(message)}
+                      </div>
+                    )}
 
-                  {message.mediaType !== "multi_vcard" && message.mediaType !== "location" && message.mediaType !== "vcard" && <WhatsMarked sx={{ fontSize: 'inherit', lineHeight: 'inherit', display: 'flex', width: '100%' }}>{message.body}</WhatsMarked>}
-                  {renderReactions(message)}
-                  <MessageTimestamp>
-                    {renderMessageStateIcons(message)}
-                    {message.isEdited && <span>{t("messagesList.message.edited")} </span>}
-                    {format(parseISO(message.createdAt), "HH:mm")}
-                  </MessageTimestamp>
-                </MessageItem>
-              </MessageLeft>
+                    {message.mediaType !== "multi_vcard" &&
+                      message.mediaType !== "location" &&
+                      message.mediaType !== "vcard" && (
+                        <WhatsMarked
+                          sx={{
+                            fontSize: "inherit",
+                            lineHeight: "inherit",
+                            display: "flex",
+                            width: "100%",
+                          }}
+                        >
+                          {message.body}
+                        </WhatsMarked>
+                      )}
+                    {renderReactions(message)}
+                    <MessageTimestamp>
+                      {renderMessageStateIcons(message)}
+                      {message.isEdited && (
+                        <span>{t("messagesList.message.edited")} </span>
+                      )}
+                      {format(parseISO(message.createdAt), "HH:mm")}
+                    </MessageTimestamp>
+                  </MessageItem>
+                </MessageLeft>
               </Box>
             </Fragment>
           );
         }
-        const isSelected = selectedMessages.some(msg => msg.id === message.id);
+        const isSelected = selectedMessages.some(
+          (msg) => msg.id === message.id,
+        );
         return (
           <Fragment key={message.id}>
             {renderDailyTimestamps(message, index)}
             {renderMessageDivider(message, index)}
             {renderNumberTicket(message, index)}
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'flex-start',
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "flex-start",
                 gap: isForwardingMode ? 1 : 0,
                 marginBottom: 1,
-                justifyContent: 'flex-end'
+                justifyContent: "flex-end",
               }}
             >
-              <MessageRight 
+              <MessageRight
                 id={message.id}
-                onClick={!isForwardingMode ? undefined : () => handleMessageClick(message)}
-                sx={{ 
-                  cursor: isForwardingMode ? 'pointer' : 'default',
-                  border: isSelected ? '2px solid #00a884' : 'none',
-                  flex: 1
+                onClick={
+                  !isForwardingMode
+                    ? undefined
+                    : () => handleMessageClick(message)
+                }
+                sx={{
+                  cursor: isForwardingMode ? "pointer" : "default",
+                  border: isSelected ? "2px solid #00a884" : "none",
+                  flex: 1,
                 }}
               >
                 {!isForwardingMode && (
@@ -2012,23 +2280,46 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                           fontSize: 18,
                           verticalAlign: "middle",
                           marginRight: 4,
-                          color: red[200]
+                          color: red[200],
                         }}
                       />
-                      <WhatsMarked>{t("messagesList.message.deleted")}</WhatsMarked>
+                      <WhatsMarked>
+                        {t("messagesList.message.deleted")}
+                      </WhatsMarked>
                     </span>
                   </div>
                 )}
-                {(message.mediaUrl || message.mediaType === "location" || message.mediaType === "vcard"
-                  || message.mediaType === "multi_vcard"
-                ) && checkMessageMedia(message)}
+                {(message.mediaUrl ||
+                  message.mediaType === "location" ||
+                  message.mediaType === "vcard" ||
+                  message.mediaType === "multi_vcard") &&
+                  checkMessageMedia(message)}
                 <MessageItem message={message}>
-                  {message.quotedMsg && <div style={{ marginBottom: '8px' }}>{renderQuotedMessage(message)}</div>}
-                  {message.mediaType !== "multi_vcard" && message.mediaType !== "location" && message.mediaType !== "vcard" && <WhatsMarked sx={{ fontSize: 'inherit', lineHeight: 'inherit', display: 'flex', width: '100%' }}>{message.body}</WhatsMarked>}
+                  {message.quotedMsg && (
+                    <div style={{ marginBottom: "8px" }}>
+                      {renderQuotedMessage(message)}
+                    </div>
+                  )}
+                  {message.mediaType !== "multi_vcard" &&
+                    message.mediaType !== "location" &&
+                    message.mediaType !== "vcard" && (
+                      <WhatsMarked
+                        sx={{
+                          fontSize: "inherit",
+                          lineHeight: "inherit",
+                          display: "flex",
+                          width: "100%",
+                        }}
+                      >
+                        {message.body}
+                      </WhatsMarked>
+                    )}
                   {renderReactions(message)}
                   <MessageTimestamp>
                     {renderMessageStateIcons(message)}
-                    {message.isEdited && <span>{t("messagesList.message.edited")} </span>}
+                    {message.isEdited && (
+                      <span>{t("messagesList.message.edited")} </span>
+                    )}
                     {format(parseISO(message.createdAt), "HH:mm")}
                     {renderMessageAck(message)}
                   </MessageTimestamp>
@@ -2040,17 +2331,19 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                   sx={{
                     width: 20,
                     height: 20,
-                    borderRadius: '50%',
-                    border: isSelected ? 'none' : '2px solid #8696a0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
+                    borderRadius: "50%",
+                    border: isSelected ? "none" : "2px solid #8696a0",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
                     marginTop: 1,
                     flexShrink: 0,
-                    '&:hover': {
-                      backgroundColor: isSelected ? '#00a884' : 'rgba(134, 150, 160, 0.1)',
-                    }
+                    "&:hover": {
+                      backgroundColor: isSelected
+                        ? "#00a884"
+                        : "rgba(134, 150, 160, 0.1)",
+                    },
                   }}
                 >
                   {isSelected && (
@@ -2069,7 +2362,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
         );
       });
       // Filtrar mensagens null (álbuns já processados)
-      return viewMessagesList.filter(msg => msg !== null);
+      return viewMessagesList.filter((msg) => msg !== null);
     } else {
       return <div>Say hello to your new contact!</div>;
     }
@@ -2106,7 +2399,9 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
       </MessagesListStyled>
       <ScrollToBottomButton
         onClick={() => {
-          const messagesContainer = document.querySelector('.messages-list-scrollable');
+          const messagesContainer = document.querySelector(
+            ".messages-list-scrollable",
+          );
           if (messagesContainer) {
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
           }
@@ -2122,14 +2417,14 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
           <CircularProgressStyled />
         </div>
       )}
-      
+
       <ForwardingBar
         isVisible={isForwardingMode}
         selectedCount={selectedMessages.length}
         onClose={handleExitForwardingMode}
         onForward={handleOpenForwardModal}
       />
-      
+
       <ForwardMessageModal
         open={forwardModalOpen}
         onClose={handleCloseForwardModal}
@@ -2143,7 +2438,6 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
         t={t}
       />
     </MessagesListWrapper>
-
   );
 };
 

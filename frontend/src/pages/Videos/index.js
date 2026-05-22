@@ -88,7 +88,7 @@ const VideoCard = styled(Card)(({ theme }) => ({
 }));
 
 const VideoCardMedia = styled(CardMedia)(({ theme }) => ({
-  paddingTop: "56.25%", 
+  paddingTop: "56.25%",
   position: "relative",
   "&::after": {
     content: '""',
@@ -143,7 +143,7 @@ const VideoPlayerDialog = styled(Dialog)(({ theme }) => ({
 
 const VideoPlayerContainer = styled(Box)(({ theme }) => ({
   position: "relative",
-  paddingTop: "56.25%", 
+  paddingTop: "56.25%",
   width: "100%",
   backgroundColor: "#000",
 }));
@@ -196,8 +196,8 @@ const Videos = () => {
 
   useEffect(() => {
     if (searchParam) {
-      const filtered = videos.filter(video => 
-        video.title.toLowerCase().includes(searchParam.toLowerCase())
+      const filtered = videos.filter((video) =>
+        video.title.toLowerCase().includes(searchParam.toLowerCase()),
       );
       setFilteredVideos(filtered);
     } else {
@@ -246,7 +246,7 @@ const Videos = () => {
     setTitle(video.title);
     setVideoUrl(video.url);
     setStatus(video.active);
-    setSelectedUsers(video.users?.map(u => u.id) || []);
+    setSelectedUsers(video.users?.map((u) => u.id) || []);
     setModalOpen(true);
   };
 
@@ -298,9 +298,10 @@ const Videos = () => {
   };
 
   const getYoutubeVideoId = (url) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url?.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    return match && match[2].length === 11 ? match[2] : null;
   };
 
   const getVideoThumbnail = (url) => {
@@ -310,8 +311,8 @@ const Videos = () => {
 
   const canUserSeeVideo = (video) => {
     if (!video.users || video.users.length === 0) return true;
-    
-    return video.users.some(u => u.id === user.id);
+
+    return video.users.some((u) => u.id === user.id);
   };
 
   const toggleView = () => {
@@ -325,7 +326,9 @@ const Videos = () => {
   const handleOpenPlayer = (video) => {
     const videoId = getYoutubeVideoId(video.url);
     if (videoId) {
-      setCurrentVideoUrl(`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`);
+      setCurrentVideoUrl(
+        `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`,
+      );
       setCurrentVideoTitle(video.title);
       setPlayerOpen(true);
     } else {
@@ -342,8 +345,8 @@ const Videos = () => {
     return (
       <VideoGrid container spacing={3}>
         {filteredVideos
-          .filter(video => video.active && canUserSeeVideo(video))
-          .map(video => (
+          .filter((video) => video.active && canUserSeeVideo(video))
+          .map((video) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={video.id}>
               <VideoCard>
                 <CardActionArea onClick={() => handleOpenPlayer(video)}>
@@ -382,21 +385,30 @@ const Videos = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredVideos.map(video => (
+          {filteredVideos.map((video) => (
             <TableRow key={video.id}>
               <TableCell>{video.id}</TableCell>
               <TableCell>{video.title}</TableCell>
               <TableCell>
-                {video.active ? 
-                  <Chip label={t("videos.active")} color="success" size="small" /> : 
-                  <Chip label={t("videos.inactive")} color="error" size="small" />
-                }
+                {video.active ? (
+                  <Chip
+                    label={t("videos.active")}
+                    color="success"
+                    size="small"
+                  />
+                ) : (
+                  <Chip
+                    label={t("videos.inactive")}
+                    color="error"
+                    size="small"
+                  />
+                )}
               </TableCell>
               <TableCell>
-                <Tooltip 
+                <Tooltip
                   title={
-                    video.users && video.users.length > 0 
-                      ? video.users.map(u => u.name).join(", ") 
+                    video.users && video.users.length > 0
+                      ? video.users.map((u) => u.name).join(", ")
                       : t("videos.allUsers")
                   }
                 >
@@ -407,16 +419,16 @@ const Videos = () => {
               </TableCell>
               <TableCell>
                 <Tooltip title={t("videos.buttons.edit")}>
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     onClick={() => handleEditVideo(video)}
                   >
                     <EditIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={t("videos.buttons.delete")}>
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     onClick={() => {
                       setVideoToDelete(video);
                       setConfirmModalOpen(true);
@@ -455,7 +467,13 @@ const Videos = () => {
           />
           <ButtonContainer>
             {(user.profile === "admin" || user.profile === "master") && (
-              <Tooltip title={showTable ? t("videos.buttons.cards") : t("videos.buttons.table")}>
+              <Tooltip
+                title={
+                  showTable
+                    ? t("videos.buttons.cards")
+                    : t("videos.buttons.table")
+                }
+              >
                 <Button
                   variant="outlined"
                   color="primary"
@@ -467,7 +485,7 @@ const Videos = () => {
                     height: "40px",
                     borderRadius: "50%",
                     p: 0,
-                    mr: 1
+                    mr: 1,
                   }}
                 >
                   {showTable ? <ViewModuleIcon /> : <ViewListIcon />}
@@ -488,7 +506,7 @@ const Videos = () => {
                       width: "40px",
                       height: "40px",
                       borderRadius: "50%",
-                      p: 0
+                      p: 0,
                     }}
                   >
                     <AddIcon />
@@ -502,134 +520,38 @@ const Videos = () => {
     );
   };
 
-return (
-  <MainContainer>
-    {renderTopButtons()}
-    <ConfirmationModal
-      title={t("videos.confirmationModal.deleteTitle")}
-      open={confirmModalOpen}
-      onClose={() => setConfirmModalOpen(false)}
-      onConfirm={handleDeleteVideo}
-    >
-      {t("videos.confirmationModal.deleteMessage")}
-    </ConfirmationModal>
-    <Paper>
-      {loading ? (
-        <Typography variant="body2" color="textSecondary" align="center" style={{ padding: 20 }}>
-          {t("videos.loading")}
-        </Typography>
-      ) : (
-        <>
-          {user.profile === "user" || !showTable ? (
-            renderVideoCards()
-          ) : (
-            renderVideoTable()
-          )}
-        </>
-      )}
-    </Paper>
+  return (
+    <MainContainer>
+      {renderTopButtons()}
+      <ConfirmationModal
+        title={t("videos.confirmationModal.deleteTitle")}
+        open={confirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+        onConfirm={handleDeleteVideo}
+      >
+        {t("videos.confirmationModal.deleteMessage")}
+      </ConfirmationModal>
+      <Paper>
+        {loading ? (
+          <Typography
+            variant="body2"
+            color="textSecondary"
+            align="center"
+            style={{ padding: 20 }}
+          >
+            {t("videos.loading")}
+          </Typography>
+        ) : (
+          <>
+            {user.profile === "user" || !showTable
+              ? renderVideoCards()
+              : renderVideoTable()}
+          </>
+        )}
+      </Paper>
 
-    <Dialog 
-      open={modalOpen} 
-      onClose={handleCloseModal}
-      maxWidth="sm"
-      fullWidth
-    >
-      <DialogTitle>
-        {selectedVideo ? t("videos.dialog.edit") : t("videos.dialog.add")}
-      </DialogTitle>
-      <DialogContent dividers>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TextField
-              label={t("videos.dialog.title")}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              fullWidth
-              variant="outlined"
-              margin="dense"
-              required
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              label={t("videos.dialog.url")}
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              fullWidth
-              variant="outlined"
-              margin="dense"
-              required
-              helperText={t("videos.dialog.urlHelp")}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={status}
-                  onChange={(e) => setStatus(e.target.checked)}
-                  color="primary"
-                />
-              }
-              label={t("videos.dialog.active")}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <FormControl fullWidth variant="outlined" margin="dense">
-              <InputLabel id="users-select-label">
-                {t("videos.dialog.users")}
-              </InputLabel>
-              <Select
-                labelId="users-select-label"
-                multiple
-                value={selectedUsers}
-                onChange={handleUserSelection}
-                input={<OutlinedInput label={t("videos.dialog.users")} />}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.length === 0 ? (
-                      <Typography variant="body2" color="textSecondary">
-                        {t("videos.allUsers")}
-                      </Typography>
-                    ) : (
-                      selected.map((value) => {
-                        const user = users.find(u => u.id === value);
-                        return (
-                          <Chip key={value} label={user?.name || value} />
-                        );
-                      })
-                    )}
-                  </Box>
-                )}
-                MenuProps={MenuProps}
-              >
-                {users.map((user) => (
-                  <MenuItem key={user.id} value={user.id}>
-                    <Checkbox checked={selectedUsers.indexOf(user.id) > -1} />
-                    <ListItemText primary={user.name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Typography variant="caption" color="textSecondary">
-              {t("videos.dialog.usersHelp")}
-            </Typography>
-          </Grid>
-          {videoUrl && (
-            <>
-              {showTable ? (
-                renderVideoTable()
-              ) : (
-                renderVideoCards()
-              )}
-            </>
-          )}
-        </Grid>
-      </DialogContent>
-
-      <Dialog 
-        open={modalOpen} 
+      <Dialog
+        open={modalOpen}
         onClose={handleCloseModal}
         maxWidth="sm"
         fullWidth
@@ -686,14 +608,14 @@ return (
                   onChange={handleUserSelection}
                   input={<OutlinedInput label={t("videos.dialog.users")} />}
                   renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                       {selected.length === 0 ? (
                         <Typography variant="body2" color="textSecondary">
                           {t("videos.allUsers")}
                         </Typography>
                       ) : (
                         selected.map((value) => {
-                          const user = users.find(u => u.id === value);
+                          const user = users.find((u) => u.id === value);
                           return (
                             <Chip key={value} label={user?.name || value} />
                           );
@@ -716,94 +638,206 @@ return (
               </Typography>
             </Grid>
             {videoUrl && (
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" gutterBottom>
-                  {t("videos.dialog.preview")}
-                </Typography>
-                <Box
-                  sx={{
-                    width: "100%",
-                    height: 0,
-                    paddingTop: "56.25%", 
-                    position: "relative",
-                    marginTop: 1,
-                    marginBottom: 2,
-                    backgroundColor: "#f0f0f0",
-                    backgroundImage: `url(${getVideoThumbnail(videoUrl)})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }}
-                />
-              </Grid>
+              <>{showTable ? renderVideoTable() : renderVideoCards()}</>
             )}
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Tooltip title={t("videos.buttons.cancel")}>
-            <Button 
-              onClick={handleCloseModal} 
-              color="secondary"
-              sx={{
-                minWidth: "40px",
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                p: 0,
-              }}
-            >
-              <CloseIcon />
-            </Button>
-          </Tooltip>
-          <Tooltip title={t("videos.buttons.save")}>
-            <Button 
-              onClick={handleSaveVideo} 
-              color="primary" 
-              variant="contained"
-              sx={{
-                minWidth: "40px",
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                p: 0,
-              }}
-            >
-              <SaveIcon />
-            </Button>
-          </Tooltip>
-        </DialogActions>
+
+        <Dialog
+          open={modalOpen}
+          onClose={handleCloseModal}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            {selectedVideo ? t("videos.dialog.edit") : t("videos.dialog.add")}
+          </DialogTitle>
+          <DialogContent dividers>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  label={t("videos.dialog.title")}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  fullWidth
+                  variant="outlined"
+                  margin="dense"
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label={t("videos.dialog.url")}
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  fullWidth
+                  variant="outlined"
+                  margin="dense"
+                  required
+                  helperText={t("videos.dialog.urlHelp")}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={status}
+                      onChange={(e) => setStatus(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label={t("videos.dialog.active")}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControl fullWidth variant="outlined" margin="dense">
+                  <InputLabel id="users-select-label">
+                    {t("videos.dialog.users")}
+                  </InputLabel>
+                  <Select
+                    labelId="users-select-label"
+                    multiple
+                    value={selectedUsers}
+                    onChange={handleUserSelection}
+                    input={<OutlinedInput label={t("videos.dialog.users")} />}
+                    renderValue={(selected) => (
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                        {selected.length === 0 ? (
+                          <Typography variant="body2" color="textSecondary">
+                            {t("videos.allUsers")}
+                          </Typography>
+                        ) : (
+                          selected.map((value) => {
+                            const user = users.find((u) => u.id === value);
+                            return (
+                              <Chip key={value} label={user?.name || value} />
+                            );
+                          })
+                        )}
+                      </Box>
+                    )}
+                    MenuProps={MenuProps}
+                  >
+                    {users.map((user) => (
+                      <MenuItem key={user.id} value={user.id}>
+                        <Checkbox
+                          checked={selectedUsers.indexOf(user.id) > -1}
+                        />
+                        <ListItemText primary={user.name} />
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Typography variant="caption" color="textSecondary">
+                  {t("videos.dialog.usersHelp")}
+                </Typography>
+              </Grid>
+              {videoUrl && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {t("videos.dialog.preview")}
+                  </Typography>
+                  <Box
+                    sx={{
+                      width: "100%",
+                      height: 0,
+                      paddingTop: "56.25%",
+                      position: "relative",
+                      marginTop: 1,
+                      marginBottom: 2,
+                      backgroundColor: "#f0f0f0",
+                      backgroundImage: `url(${getVideoThumbnail(videoUrl)})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  />
+                </Grid>
+              )}
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Tooltip title={t("videos.buttons.cancel")}>
+              <Button
+                onClick={handleCloseModal}
+                color="secondary"
+                sx={{
+                  minWidth: "40px",
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  p: 0,
+                }}
+              >
+                <CloseIcon />
+              </Button>
+            </Tooltip>
+            <Tooltip title={t("videos.buttons.save")}>
+              <Button
+                onClick={handleSaveVideo}
+                color="primary"
+                variant="contained"
+                sx={{
+                  minWidth: "40px",
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  p: 0,
+                }}
+              >
+                <SaveIcon />
+              </Button>
+            </Tooltip>
+          </DialogActions>
+        </Dialog>
       </Dialog>
-    </Dialog>
-    
-    <VideoPlayerDialog
-      open={playerOpen}
-      onClose={handleClosePlayer}
-      maxWidth={false}
-      fullWidth
-    >
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
-        <Typography variant="h6" component="div" noWrap sx={{ flexGrow: 1, pr: 2 }}>
-          {currentVideoTitle}
-        </Typography>
-        <IconButton edge="end" color="inherit" onClick={handleClosePlayer} aria-label="close">
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent sx={{ p: 0 }}>
-        <VideoPlayerContainer>
-          {currentVideoUrl && (
-            <VideoIframe
-              src={currentVideoUrl}
-              title={currentVideoTitle}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              referrerPolicy="strict-origin-when-cross-origin"
-            />
-          )}
-        </VideoPlayerContainer>
-      </DialogContent>
-    </VideoPlayerDialog>
-  </MainContainer>
-  )
+
+      <VideoPlayerDialog
+        open={playerOpen}
+        onClose={handleClosePlayer}
+        maxWidth={false}
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            pb: 1,
+          }}
+        >
+          <Typography
+            variant="h6"
+            component="div"
+            noWrap
+            sx={{ flexGrow: 1, pr: 2 }}
+          >
+            {currentVideoTitle}
+          </Typography>
+          <IconButton
+            edge="end"
+            color="inherit"
+            onClick={handleClosePlayer}
+            aria-label="close"
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <VideoPlayerContainer>
+            {currentVideoUrl && (
+              <VideoIframe
+                src={currentVideoUrl}
+                title={currentVideoTitle}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            )}
+          </VideoPlayerContainer>
+        </DialogContent>
+      </VideoPlayerDialog>
+    </MainContainer>
+  );
 };
 
 export default Videos;

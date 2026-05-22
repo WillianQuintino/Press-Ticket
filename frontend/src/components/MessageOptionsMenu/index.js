@@ -21,9 +21,9 @@ import {
   MenuItem,
   MenuList,
   Paper,
-  Popper
+  Popper,
 } from "@mui/material";
-import EmojiPicker, { Theme as EmojiTheme } from 'emoji-picker-react';
+import EmojiPicker, { Theme as EmojiTheme } from "emoji-picker-react";
 import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EditMessageContext } from "../../context/EditingMessage/EditingMessageContext";
@@ -53,36 +53,37 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
   const [messageInfoOpen, setMessageInfoOpen] = useState(false);
   const [pinning, setPinning] = useState(false);
   const [starring, setStarring] = useState(false);
-  const [emojiPickerVirtualAnchor, setEmojiPickerVirtualAnchor] = useState(null);
+  const [emojiPickerVirtualAnchor, setEmojiPickerVirtualAnchor] =
+    useState(null);
   const emojiPickerOpen = Boolean(emojiPickerAnchorEl);
   const [recentReactions, setRecentReactions] = useState(() => {
     try {
-      const saved = localStorage.getItem('recentReactions');
+      const saved = localStorage.getItem("recentReactions");
       if (saved) return JSON.parse(saved);
     } catch (e) {}
-    return ["👍", "❤️", "😂", "😮", "😢", "🙏"]; 
+    return ["👍", "❤️", "😂", "😮", "😢", "🙏"];
   });
   const [currentMessage, setCurrentMessage] = useState(message);
-  
+
   useEffect(() => {
     if (message) {
       setCurrentMessage(message);
     }
   }, [message]);
-  
+
   useEffect(() => {
     if (!message?.id) return;
-    
+
     const socket = openSocket();
-    
+
     const handleAppMessage = (data) => {
       if (data.action === "update" && data.message?.id === message.id) {
         setCurrentMessage(data.message);
       }
     };
-    
+
     socket.on("appMessage", handleAppMessage);
-    
+
     return () => {
       socket.off("appMessage", handleAppMessage);
     };
@@ -90,7 +91,7 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
 
   const canEditMessage = () => {
     const timeDiff = new Date() - new Date(message.updatedAt);
-    return timeDiff <= 15 * 60 * 1000; 
+    return timeDiff <= 15 * 60 * 1000;
   };
 
   const openReactionMenu = (e) => {
@@ -110,12 +111,14 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
             right: rect.right,
             x: rect.right,
             y: rect.top,
-            toJSON: () => ({})
-          })
+            toJSON: () => ({}),
+          }),
         };
         setReactionVirtualAnchor(virtualTopRight);
       } else {
-        const fallbackRect = anchorEl?.getBoundingClientRect ? anchorEl.getBoundingClientRect() : null;
+        const fallbackRect = anchorEl?.getBoundingClientRect
+          ? anchorEl.getBoundingClientRect()
+          : null;
         if (fallbackRect) {
           const virtual = { getBoundingClientRect: () => fallbackRect };
           setReactionVirtualAnchor(virtual);
@@ -137,7 +140,7 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
 
   const openEmojiPicker = (e) => {
     try {
-      const container = document.getElementById('messagesList');
+      const container = document.getElementById("messagesList");
       const rect = container?.getBoundingClientRect?.();
       if (rect) {
         const centerX = rect.left + rect.width / 2;
@@ -153,8 +156,8 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
             right: centerX,
             x: centerX,
             y: centerY,
-            toJSON: () => ({})
-          })
+            toJSON: () => ({}),
+          }),
         };
         setEmojiPickerVirtualAnchor(virtualCenter);
         setEmojiPickerAnchorEl(virtualCenter);
@@ -179,9 +182,9 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
       setReacting(false);
       handleClose();
       try {
-        setRecentReactions(prev => {
-          const arr = [emoji, ...prev.filter(e => e !== emoji)].slice(0, 6);
-          localStorage.setItem('recentReactions', JSON.stringify(arr));
+        setRecentReactions((prev) => {
+          const arr = [emoji, ...prev.filter((e) => e !== emoji)].slice(0, 6);
+          localStorage.setItem("recentReactions", JSON.stringify(arr));
           return arr;
         });
       } catch (_) {}
@@ -221,11 +224,12 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
   const handleOpenMessageHistoryModal = (e) => {
     setMessageHistoryOpen(true);
     handleClose();
-  }
-  
+  };
+
   const handleCopyMessage = () => {
     if (message.body) {
-      navigator.clipboard.writeText(message.body)
+      navigator.clipboard
+        .writeText(message.body)
         .then(() => {
           toastSuccess(t("messageOptionsMenu.copied"));
         })
@@ -235,16 +239,18 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
         });
       handleClose();
     }
-  }
+  };
 
   const handleForwardMessage = () => {
     enterForwardingMode();
     handleClose();
-  }
+  };
 
   const dispatchMessageState = (messageId, updates) => {
     window.dispatchEvent(
-      new CustomEvent("messageStateUpdate", { detail: { messageId, ...updates } })
+      new CustomEvent("messageStateUpdate", {
+        detail: { messageId, ...updates },
+      }),
     );
   };
 
@@ -252,7 +258,7 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
     try {
       setPinning(true);
       await WhatsAppFeaturesService.pinMessage(message.id, 604800);
-      setCurrentMessage(prev => ({ ...prev, isPinned: true }));
+      setCurrentMessage((prev) => ({ ...prev, isPinned: true }));
       dispatchMessageState(message.id, { isPinned: true });
       toastSuccess(t("messageOptionsMenu.pinSuccess"));
     } catch (err) {
@@ -267,7 +273,7 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
     try {
       setPinning(true);
       await WhatsAppFeaturesService.unpinMessage(message.id);
-      setCurrentMessage(prev => ({ ...prev, isPinned: false }));
+      setCurrentMessage((prev) => ({ ...prev, isPinned: false }));
       dispatchMessageState(message.id, { isPinned: false });
       toastSuccess(t("messageOptionsMenu.unpinSuccess"));
     } catch (err) {
@@ -282,7 +288,7 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
     try {
       setStarring(true);
       await WhatsAppFeaturesService.starMessage(message.id);
-      setCurrentMessage(prev => ({ ...prev, isStarred: true }));
+      setCurrentMessage((prev) => ({ ...prev, isStarred: true }));
       dispatchMessageState(message.id, { isStarred: true });
       toastSuccess(t("messageOptionsMenu.starSuccess"));
     } catch (err) {
@@ -297,7 +303,7 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
     try {
       setStarring(true);
       await WhatsAppFeaturesService.unstarMessage(message.id);
-      setCurrentMessage(prev => ({ ...prev, isStarred: false }));
+      setCurrentMessage((prev) => ({ ...prev, isStarred: false }));
       dispatchMessageState(message.id, { isStarred: false });
       toastSuccess(t("messageOptionsMenu.unstarSuccess"));
     } catch (err) {
@@ -312,9 +318,13 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
     setMessageInfoOpen(true);
     handleClose();
   };
-  
+
   const hasTextToCopy = () => {
-    return message.body && typeof message.body === 'string' && message.body.trim() !== '';
+    return (
+      message.body &&
+      typeof message.body === "string" &&
+      message.body.trim() !== ""
+    );
   };
 
   return (
@@ -331,8 +341,7 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
         open={messageHistoryOpen}
         onClose={setMessageHistoryOpen}
         oldMessages={currentMessage?.oldMessages || []}
-      >
-      </MessageHistoryModal>
+      ></MessageHistoryModal>
       <MessageInfoModal
         open={messageInfoOpen}
         onClose={() => setMessageInfoOpen(false)}
@@ -345,7 +354,7 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
         style={{ zIndex: 1300 }}
         modifiers={[
           {
-            name: 'offset',
+            name: "offset",
             options: {
               offset: [0, 4],
             },
@@ -358,15 +367,21 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
             sx={{
               minWidth: 180,
               borderRadius: 2,
-              overflow: 'visible',
+              overflow: "visible",
             }}
           >
             <MenuList>
-              <MenuItem key="react-open" onClick={openReactionMenu} disabled={reacting}>
+              <MenuItem
+                key="react-open"
+                onClick={openReactionMenu}
+                disabled={reacting}
+              >
                 <ListItemIcon>
                   <SentimentSatisfiedAltIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary={t("messageOptionsMenu.react") || "Reagir"} />
+                <ListItemText
+                  primary={t("messageOptionsMenu.react") || "Reagir"}
+                />
               </MenuItem>
               <Divider />
               <MenuItem key="reply" onClick={hanldeReplyMessage}>
@@ -382,7 +397,7 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
                 </ListItemIcon>
                 <ListItemText primary={t("messageOptionsMenu.forward")} />
               </MenuItem>
-              
+
               {hasTextToCopy() && (
                 <MenuItem key="copy" onClick={handleCopyMessage}>
                   <ListItemIcon>
@@ -391,9 +406,9 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
                   <ListItemText primary={t("messageOptionsMenu.copy")} />
                 </MenuItem>
               )}
-              
+
               {(message.fromMe || hasTextToCopy()) && <Divider />}
-              
+
               {message.fromMe && canEditMessage() && (
                 <MenuItem key="edit" onClick={handleEditMessage}>
                   <ListItemIcon>
@@ -402,7 +417,7 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
                   <ListItemText primary={t("messageOptionsMenu.edit")} />
                 </MenuItem>
               )}
-              
+
               {currentMessage?.oldMessages?.length > 0 && (
                 <MenuItem key="history" onClick={handleOpenMessageHistoryModal}>
                   <ListItemIcon>
@@ -411,18 +426,26 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
                   <ListItemText primary={t("messageOptionsMenu.history")} />
                 </MenuItem>
               )}
-              
+
               {message.fromMe && <Divider />}
-              
+
               {!currentMessage?.isPinned ? (
-                <MenuItem key="pin" onClick={handlePinMessage} disabled={pinning}>
+                <MenuItem
+                  key="pin"
+                  onClick={handlePinMessage}
+                  disabled={pinning}
+                >
                   <ListItemIcon>
                     <PushPinOutlinedIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText primary={t("messageOptionsMenu.pin")} />
                 </MenuItem>
               ) : (
-                <MenuItem key="unpin" onClick={handleUnpinMessage} disabled={pinning}>
+                <MenuItem
+                  key="unpin"
+                  onClick={handleUnpinMessage}
+                  disabled={pinning}
+                >
                   <ListItemIcon>
                     <PushPinIcon fontSize="small" />
                   </ListItemIcon>
@@ -431,14 +454,22 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
               )}
 
               {!currentMessage?.isStarred ? (
-                <MenuItem key="star" onClick={handleStarMessage} disabled={starring}>
+                <MenuItem
+                  key="star"
+                  onClick={handleStarMessage}
+                  disabled={starring}
+                >
                   <ListItemIcon>
                     <StarBorderIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText primary={t("messageOptionsMenu.star")} />
                 </MenuItem>
               ) : (
-                <MenuItem key="unstar" onClick={handleUnstarMessage} disabled={starring}>
+                <MenuItem
+                  key="unstar"
+                  onClick={handleUnstarMessage}
+                  disabled={starring}
+                >
                   <ListItemIcon>
                     <StarIcon fontSize="small" />
                   </ListItemIcon>
@@ -458,18 +489,18 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
               {message.fromMe && <Divider />}
 
               {message.fromMe && (
-                <MenuItem 
-                  key="delete" 
+                <MenuItem
+                  key="delete"
                   onClick={handleOpenConfirmationModal}
                   sx={{
-                    '&:hover': {
-                      backgroundColor: 'rgba(211, 47, 47, 0.08)',
-                      '& .MuiListItemIcon-root': {
-                        color: 'error.main',
+                    "&:hover": {
+                      backgroundColor: "rgba(211, 47, 47, 0.08)",
+                      "& .MuiListItemIcon-root": {
+                        color: "error.main",
                       },
-                      '& .MuiTypography-root': {
-                        color: 'error.main',
-                      }
+                      "& .MuiTypography-root": {
+                        color: "error.main",
+                      },
                     },
                   }}
                 >
@@ -488,17 +519,25 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
         open={reactionPopperOpen}
         anchorEl={reactionVirtualAnchor || reactionAnchorEl}
         placement="top-end"
-        modifiers={[{ name: 'offset', options: { offset: [0, 8] } }]}
+        modifiers={[{ name: "offset", options: { offset: [0, 8] } }]}
         style={{ zIndex: 1500 }}
       >
-        <ClickAwayListener onClickAway={() => { closeReactionMenu(); closeEmojiPicker(); }}>
+        <ClickAwayListener
+          onClickAway={() => {
+            closeReactionMenu();
+            closeEmojiPicker();
+          }}
+        >
           <Paper elevation={4} sx={{ borderRadius: 999, px: 0.5, py: 0.25 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              {recentReactions.slice(0,6).map((emoji) => (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              {recentReactions.slice(0, 6).map((emoji) => (
                 <IconButton
                   key={`react-mini-${emoji}`}
                   size="small"
-                  onClick={() => { handleSendReaction(emoji); closeReactionMenu(); }}
+                  onClick={() => {
+                    handleSendReaction(emoji);
+                    closeReactionMenu();
+                  }}
                   disabled={reacting}
                   sx={{ width: 32, height: 32 }}
                 >
@@ -508,7 +547,10 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
               <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
               <IconButton
                 size="small"
-                onClick={(ev) => { closeReactionMenu(); openEmojiPicker(ev); }}
+                onClick={(ev) => {
+                  closeReactionMenu();
+                  openEmojiPicker(ev);
+                }}
                 disabled={reacting}
                 sx={{ width: 30, height: 30 }}
               >
@@ -523,10 +565,10 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
         open={emojiPickerOpen}
         anchorEl={emojiPickerVirtualAnchor || emojiPickerAnchorEl}
         placement="top"
-        modifiers={[{ name: 'offset', options: { offset: [0, 12] } }]}
+        modifiers={[{ name: "offset", options: { offset: [0, 12] } }]}
         style={{ zIndex: 1550 }}
       >
-        <Paper elevation={4} sx={{ overflow: 'hidden', borderRadius: 2 }}>
+        <Paper elevation={4} sx={{ overflow: "hidden", borderRadius: 2 }}>
           <EmojiPicker
             theme={EmojiTheme.AUTO}
             onEmojiClick={(e) => {
@@ -534,9 +576,15 @@ const MessageOptionsMenu = ({ message, menuOpen, handleClose, anchorEl }) => {
               if (emoji) {
                 handleSendReaction(emoji);
                 try {
-                  setRecentReactions(prev => {
-                    const arr = [emoji, ...prev.filter(x => x !== emoji)].slice(0, 6);
-                    localStorage.setItem('recentReactions', JSON.stringify(arr));
+                  setRecentReactions((prev) => {
+                    const arr = [
+                      emoji,
+                      ...prev.filter((x) => x !== emoji),
+                    ].slice(0, 6);
+                    localStorage.setItem(
+                      "recentReactions",
+                      JSON.stringify(arr),
+                    );
                     return arr;
                   });
                 } catch (_) {}
