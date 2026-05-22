@@ -43,11 +43,17 @@ const dbEnv = (): NodeJS.ProcessEnv => ({
 
 const runMysqldump = (filePath: string): Promise<void> => {
   return new Promise((resolve, reject) => {
+    const resolvedPath = path.resolve(filePath);
+    const resolvedBase = path.resolve(BACKUP_DIR);
+    if (!resolvedPath.startsWith(resolvedBase + path.sep)) {
+      reject(new Error("Acesso negado: caminho inválido"));
+      return;
+    }
     const dump = spawn("mysqldump", [...dbArgs(), DB_CONFIG.database], {
       env: dbEnv()
     });
     const gzip = spawn("gzip", []);
-    const out = fs.createWriteStream(filePath);
+    const out = fs.createWriteStream(resolvedPath);
 
     dump.stdout.pipe(gzip.stdin);
     gzip.stdout.pipe(out);
@@ -149,23 +155,28 @@ export const createBackup = async (
       : `backup_${timestamp}.sql.gz`;
 
     const filePath = path.join(BACKUP_DIR, filename);
+    const resolvedFilePath = path.resolve(filePath);
+    const resolvedBase = path.resolve(BACKUP_DIR);
+    if (!resolvedFilePath.startsWith(resolvedBase + path.sep)) {
+      throw new Error("Acesso negado: caminho inválido");
+    }
 
-    logger.info(`Iniciando backup do banco de dados para ${filePath}`);
-    await runMysqldump(filePath);
+    logger.info(`Iniciando backup do banco de dados para ${resolvedFilePath}`);
+    await runMysqldump(resolvedFilePath);
 
-    if (!fs.existsSync(filePath)) {
+    if (!fs.existsSync(resolvedFilePath)) {
       throw new Error("Backup falhou: arquivo não foi criado");
     }
 
-    const stats = fs.statSync(filePath);
+    const stats = fs.statSync(resolvedFilePath);
 
     logger.info(
-      `Backup concluído com sucesso: ${filePath} (${formatBytes(stats.size)})`
+      `Backup concluído com sucesso: ${resolvedFilePath} (${formatBytes(stats.size)})`
     );
 
     return {
       filename,
-      path: filePath,
+      path: resolvedFilePath,
       size: formatBytes(stats.size),
       date: format(stats.mtime, "dd 'de' MMMM 'de' yyyy 'às' HH:mm:ss", {
         locale: pt
@@ -234,18 +245,23 @@ export const uploadBackup = async (
     const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9_.-]/g, "_");
     const filename = `importado_${timestamp}_${sanitizedName}`;
     const filePath = path.join(BACKUP_DIR, filename);
+    const resolvedFilePath = path.resolve(filePath);
+    const resolvedBase = path.resolve(BACKUP_DIR);
+    if (!resolvedFilePath.startsWith(resolvedBase + path.sep)) {
+      throw new Error("Acesso negado: caminho inválido");
+    }
 
-    fs.writeFileSync(filePath, file.buffer);
+    fs.writeFileSync(resolvedFilePath, file.buffer);
 
-    const stats = fs.statSync(filePath);
+    const stats = fs.statSync(resolvedFilePath);
 
     logger.info(
-      `Backup importado com sucesso: ${filePath} (${formatBytes(stats.size)})`
+      `Backup importado com sucesso: ${resolvedFilePath} (${formatBytes(stats.size)})`
     );
 
     return {
       filename,
-      path: filePath,
+      path: resolvedFilePath,
       size: formatBytes(stats.size),
       date: format(stats.mtime, "dd 'de' MMMM 'de' yyyy 'às' HH:mm:ss", {
         locale: pt

@@ -50,9 +50,17 @@ const getDirSize = async (dirPath: string): Promise<number> => {
   }
 };
 
-const getFileSize = async (filePath: string): Promise<number> => {
+const requireWithinBase = (base: string, resolved: string): string => {
+  if (!resolved.startsWith(base + path.sep) && resolved !== base) {
+    throw new Error("Acesso negado: caminho fora da pasta permitida");
+  }
+  return resolved;
+};
+
+const getFileSize = async (base: string, filePath: string): Promise<number> => {
   try {
-    const stats = await fs.stat(filePath);
+    const resolved = requireWithinBase(base, path.resolve(filePath));
+    const stats = await fs.stat(resolved);
     return stats.size;
   } catch {
     return 0;
@@ -71,13 +79,11 @@ export const getFolderContents = async (
   const basePath = path.resolve("/home/deploy", companyName);
   const fullPath = path.resolve(basePath, folderPath);
 
-  if (!fullPath.startsWith(basePath + path.sep) && fullPath !== basePath) {
-    throw new Error("Acesso negado: caminho fora da pasta permitida");
-  }
+  const safeFullPath = requireWithinBase(basePath, fullPath);
 
   let entries;
   try {
-    entries = await fs.readdir(fullPath, { withFileTypes: true });
+    entries = await fs.readdir(safeFullPath, { withFileTypes: true });
   } catch {
     return [];
   }
@@ -90,13 +96,13 @@ export const getFolderContents = async (
         e => !EXCLUDED_NAMES.has(e.name) && e.name !== "." && e.name !== ".."
       )
       .map(async entry => {
-        const itemFullPath = path.join(fullPath, entry.name);
+        const itemFullPath = path.join(safeFullPath, entry.name);
         const isDirectory = entry.isDirectory();
         const relativeName = path.relative(basePath, itemFullPath);
 
         const sizeBytes = isDirectory
           ? await getDirSize(itemFullPath)
-          : await getFileSize(itemFullPath);
+          : await getFileSize(basePath, itemFullPath);
 
         items.push({
           path: itemFullPath,
@@ -152,7 +158,7 @@ export const getDiskSpaceInfo = async (): Promise<DiskSpaceInfo> => {
 
           const sizeBytes = isDirectory
             ? await getDirSize(fullPath)
-            : await getFileSize(fullPath);
+            : await getFileSize(folderPath, fullPath);
 
           const item: FolderSizeInfo = {
             path: fullPath,

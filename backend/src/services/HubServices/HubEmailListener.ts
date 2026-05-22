@@ -1,3 +1,4 @@
+import sanitizeHtml from "sanitize-html";
 import Contact from "../../models/Contact";
 import Email from "../../models/Email";
 import EmailAttachment from "../../models/EmailAttachment";
@@ -37,13 +38,11 @@ interface IEmailWebhookPayload {
 }
 
 const extractTextFromHtml = (html: string): string => {
-  // Limit input to prevent catastrophic backtracking on malformed HTML
-  const limited = html.length > 500_000 ? html.substring(0, 500_000) : html;
-  // Use non-backtracking patterns: [^<]* instead of [\s\S]*? inside tags
-  return limited
-    .replace(/<style\b[^<]*(?:(?!<\/style)<[^<]*)*<\/style>/gi, "")
-    .replace(/<script\b[^<]*(?:(?!<\/script)<[^<]*)*<\/script>/gi, "")
-    .replace(/<[^>]{0,2000}>/g, " ")
+  const limited = typeof html === "string" ? html.slice(0, 500_000) : "";
+  return sanitizeHtml(limited, {
+    allowedTags: [],
+    allowedAttributes: {}
+  })
     .replace(/\s+/g, " ")
     .trim();
 };

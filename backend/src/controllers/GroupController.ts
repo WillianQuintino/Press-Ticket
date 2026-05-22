@@ -273,12 +273,12 @@ export const setPicture = async (req: Request, res: Response) => {
   try {
     const { chat } = await getGroupChatOrFail(groupId);
 
-    const base64 = fs.readFileSync(file.path, { encoding: "base64" });
+    const base64 = fs.readFileSync(resolvedFilePath, { encoding: "base64" });
     const media = new MessageMedia(file.mimetype, base64, file.filename);
 
     const ok = await chat.setPicture(media);
 
-    fs.unlinkSync(file.path);
+    fs.unlinkSync(resolvedFilePath);
 
     const io = getIO();
     io.emit("group", {
@@ -288,11 +288,9 @@ export const setPicture = async (req: Request, res: Response) => {
 
     return res.json({ success: !!ok });
   } catch (error) {
-    if (req.file?.path) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch {}
-    }
+    try {
+      fs.unlinkSync(resolvedFilePath);
+    } catch {}
     throw error;
   }
 };
