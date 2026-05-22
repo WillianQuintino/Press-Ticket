@@ -120,7 +120,7 @@ const Tags = () => {
   const [hasMore, setHasMore] = useState(false);
   const [selectedTag, setSelectedTag] = useState(null);
   const [deletingTag, setDeletingTag] = useState(null);
-  const [deletingAllTags, setDeletingAllTags] = useState(null);
+  const [, setDeletingAllTags] = useState(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [searchParam, setSearchParam] = useState("");
   const [tags, dispatch] = useReducer(reducer, []);

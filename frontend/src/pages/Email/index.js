@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Avatar,
   Badge,
   Box,
   Button,
-  CircularProgress,
+
   Divider,
   IconButton,
   InputAdornment,
@@ -136,7 +136,7 @@ const EmailPage = () => {
   const [activeFolder, setActiveFolder] = useState("inbox");
   const [emails, setEmails] = useState([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [search, setSearch] = useState("");

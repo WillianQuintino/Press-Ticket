@@ -505,7 +505,6 @@ const reducer = (state, action) => {
   }
 
   if (action.type === "UPDATE_MESSAGE") {
-    const timestamp = new Date().toISOString();
     const messageToUpdate = action.payload;
 
     if (!messageToUpdate || !messageToUpdate.id) {

@@ -67,7 +67,7 @@ const CameraModal = ({ open, onClose, onCapture }) => {
   const [error, setError] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [facingMode, setFacingMode] = useState('user'); 
-  const [recordedChunks, setRecordedChunks] = useState([]);
+  const [, setRecordedChunks] = useState([]);
 
   useEffect(() => {
     if (open) {

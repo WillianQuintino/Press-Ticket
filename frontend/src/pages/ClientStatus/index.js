@@ -120,7 +120,7 @@ const ClientStatus = () => {
   const [hasMore, setHasMore] = useState(false);
   const [selectedClientStatus, setSelectedClientStatus] = useState(null);
   const [deletingClientStatus, setDeletingClientStatus] = useState(null);
-  const [deletingAllClientStatus, setDeletingAllClientStatus] = useState(null);
+  const [, setDeletingAllClientStatus] = useState(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [searchParam, setSearchParam] = useState("");
   const [clientStatus, dispatch] = useReducer(reducer, []);

@@ -294,19 +294,6 @@ const SystemHealth = () => {
     );
   };
 
-  const renderAlertIcon = (level) => {
-    switch (level) {
-      case "critical":
-        return <ErrorIcon color="error" />;
-      case "warning":
-        return <WarningIcon color="warning" />;
-      case "info":
-        return <InfoIcon color="info" />;
-      default:
-        return <InfoIcon />;
-    }
-  };
-
   return (
     <MainContainer>
       <MainHeader>

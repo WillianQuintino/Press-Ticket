@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+
 import { getVersionInfo, updateWhatsappLib, updateWhatsappLibFromGit, getReleaseNotes } from "../../services/versionService";
 import { 
   Container, 
@@ -103,7 +103,6 @@ const MessageBox = styled(Paper)(({ theme, type }) => ({
 
 const VersionCheck = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [updatingLib, setUpdatingLib] = useState(false);
   const [updatingLibFromGit, setUpdatingLibFromGit] = useState(false);

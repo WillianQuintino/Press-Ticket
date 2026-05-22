@@ -23,7 +23,7 @@ import Switch from "@mui/material/Switch";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -217,7 +217,6 @@ const IconAvatar = styled(Box)(({ theme }) => ({
 
 const SystemUpdate = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);

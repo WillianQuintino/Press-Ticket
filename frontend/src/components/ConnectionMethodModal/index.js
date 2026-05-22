@@ -13,7 +13,6 @@ import {
 } from "@mui/material";
 import { Phone, QrCode } from "@mui/icons-material";
 import { useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 import api from "../../services/api";
 import openSocket from "../../services/socket-io";
 import toastError from "../../errors/toastError";
@@ -23,7 +22,6 @@ const STEP_LOADING = "loading";
 const STEP_CODE    = "code";
 
 const ConnectionMethodModal = ({ open, onClose, onSelectMethod, whatsAppId }) => {
-	const { t } = useTranslation();
 	const [step, setStep] = useState(STEP_SELECT);
 	const [phoneNumber, setPhoneNumber] = useState("");
 	const [phoneError, setPhoneError] = useState("");

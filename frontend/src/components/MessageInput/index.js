@@ -369,7 +369,7 @@ const MessageInput = ({ ticketStatus }) => {
   const [contactId, setContactId] = useState(null);
   const [isContactBlocked, setIsContactBlocked] = useState(false);
   const [isGroup, setIsGroup] = useState(false);
-  const [groupId, setGroupId] = useState(null);
+  const [, setGroupId] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [initialCaption, setInitialCaption] = useState("");
   const [showPollCreator, setShowPollCreator] = useState(false);

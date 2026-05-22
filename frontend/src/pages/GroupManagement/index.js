@@ -83,7 +83,7 @@ const HeaderCell = styled(TableCell)(({ theme }) => ({
 const GroupManagement = () => {
   
   const [groups, setGroups] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [searchParam, setSearchParam] = useState("");
   const [selectedWhatsappId, setSelectedWhatsappId] = useState(null);
   const [whatsapps, setWhatsapps] = useState([]);

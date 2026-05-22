@@ -120,7 +120,7 @@ const QuickAnswers = () => {
   const [selectedQuickAnswers, setSelectedQuickAnswers] = useState(null);
   const [quickAnswersModalOpen, setQuickAnswersModalOpen] = useState(false);
   const [deletingQuickAnswers, setDeletingQuickAnswers] = useState(null);
-  const [deletingAllQuickAnswers, setDeletingAllQuickAnswers] = useState(null);
+  const [, setDeletingAllQuickAnswers] = useState(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [settings, setSettings] = useState([]);
