@@ -34,6 +34,24 @@ const EXCLUDED_NAMES = new Set([
   "coverage"
 ]);
 
+const ALLOWED_SCAN_ROOTS = [
+  path.resolve("/home/deploy"),
+  path.resolve("/home"),
+  path.resolve("/tmp"),
+  path.resolve("/var"),
+];
+
+const safeDiskPath = (input: string): string => {
+  const resolved = path.resolve(input);
+  const isAllowed = ALLOWED_SCAN_ROOTS.some(
+    root => resolved === root || resolved.startsWith(root + path.sep)
+  );
+  if (!isAllowed) {
+    throw new Error("Acesso negado: caminho fora da pasta permitida");
+  }
+  return resolved;
+};
+
 const formatSize = (bytes: number): string => {
   const sizes = ["B", "K", "M", "G", "T"];
   if (bytes === 0) return "0B";
@@ -43,24 +61,21 @@ const formatSize = (bytes: number): string => {
 
 const getDirSize = async (dirPath: string): Promise<number> => {
   try {
-    const { stdout } = await execFileAsync("du", ["-sb", dirPath]);
+    const safePath = safeDiskPath(dirPath);
+    const { stdout } = await execFileAsync("du", ["-sb", safePath]);
     return parseInt(stdout.trim().split(/\s+/)[0]) || 0;
   } catch {
     return 0;
   }
 };
 
-const requireWithinBase = (base: string, resolved: string): string => {
-  if (!resolved.startsWith(base + path.sep) && resolved !== base) {
-    throw new Error("Acesso negado: caminho fora da pasta permitida");
-  }
-  return resolved;
-};
-
 const getFileSize = async (base: string, filePath: string): Promise<number> => {
   try {
-    const resolved = requireWithinBase(base, path.resolve(filePath));
-    const stats = await fs.stat(resolved);
+    const safePath = safeDiskPath(filePath);
+    if (!safePath.startsWith(base + path.sep) && safePath !== base) {
+      return 0;
+    }
+    const stats = await fs.stat(safePath);
     return stats.size;
   } catch {
     return 0;
@@ -77,9 +92,11 @@ export const getFolderContents = async (
   }
 
   const basePath = path.resolve("/home/deploy", companyName);
-  const fullPath = path.resolve(basePath, folderPath);
+  const safeFullPath = safeDiskPath(path.resolve(basePath, folderPath));
 
-  const safeFullPath = requireWithinBase(basePath, fullPath);
+  if (!safeFullPath.startsWith(basePath + path.sep) && safeFullPath !== basePath) {
+    throw new Error("Acesso negado: caminho fora da pasta da empresa");
+  }
 
   let entries;
   try {
@@ -96,22 +113,26 @@ export const getFolderContents = async (
         e => !EXCLUDED_NAMES.has(e.name) && e.name !== "." && e.name !== ".."
       )
       .map(async entry => {
-        const itemFullPath = path.join(safeFullPath, entry.name);
-        const isDirectory = entry.isDirectory();
-        const relativeName = path.relative(basePath, itemFullPath);
+        try {
+          const itemFullPath = safeDiskPath(path.join(safeFullPath, entry.name));
+          const isDirectory = entry.isDirectory();
+          const relativeName = path.relative(basePath, itemFullPath);
 
-        const sizeBytes = isDirectory
-          ? await getDirSize(itemFullPath)
-          : await getFileSize(basePath, itemFullPath);
+          const sizeBytes = isDirectory
+            ? await getDirSize(itemFullPath)
+            : await getFileSize(basePath, itemFullPath);
 
-        items.push({
-          path: itemFullPath,
-          name: relativeName || entry.name,
-          size: formatSize(sizeBytes),
-          sizeBytes,
-          type: isDirectory ? "folder" : "file",
-          children: []
-        });
+          items.push({
+            path: itemFullPath,
+            name: relativeName || entry.name,
+            size: formatSize(sizeBytes),
+            sizeBytes,
+            type: isDirectory ? "folder" : "file",
+            children: []
+          });
+        } catch {
+          // skip entries outside allowed paths
+        }
       })
   );
 
@@ -125,7 +146,7 @@ export const getDiskSpaceInfo = async (): Promise<DiskSpaceInfo> => {
     throw new Error("COMPANY_NAME não definido no arquivo .env");
   }
 
-  const folderPath = path.resolve("/home/deploy", companyName);
+  const folderPath = safeDiskPath(path.resolve("/home/deploy", companyName));
 
   const buildTree = async (
     dirPath: string,
@@ -134,9 +155,11 @@ export const getDiskSpaceInfo = async (): Promise<DiskSpaceInfo> => {
   ): Promise<FolderSizeInfo[]> => {
     if (currentDepth >= maxDepth) return [];
 
+    const safeDirPath = safeDiskPath(dirPath);
+
     let entries;
     try {
-      entries = await fs.readdir(dirPath, { withFileTypes: true });
+      entries = await fs.readdir(safeDirPath, { withFileTypes: true });
     } catch {
       return [];
     }
@@ -149,39 +172,43 @@ export const getDiskSpaceInfo = async (): Promise<DiskSpaceInfo> => {
           e => !EXCLUDED_NAMES.has(e.name) && e.name !== "." && e.name !== ".."
         )
         .map(async entry => {
-          const fullPath = path.join(dirPath, entry.name);
-          const isDirectory = entry.isDirectory();
-          const relativeName = path.relative(
-            path.resolve("/home/deploy", companyName),
-            fullPath
-          );
+          try {
+            const fullPath = safeDiskPath(path.join(safeDirPath, entry.name));
+            const isDirectory = entry.isDirectory();
+            const relativeName = path.relative(
+              path.resolve("/home/deploy", companyName),
+              fullPath
+            );
 
-          const sizeBytes = isDirectory
-            ? await getDirSize(fullPath)
-            : await getFileSize(folderPath, fullPath);
+            const sizeBytes = isDirectory
+              ? await getDirSize(fullPath)
+              : await getFileSize(folderPath, fullPath);
 
-          const item: FolderSizeInfo = {
-            path: fullPath,
-            name: relativeName || entry.name,
-            size: formatSize(sizeBytes),
-            sizeBytes,
-            type: isDirectory ? "folder" : "file",
-            children: []
-          };
+            const item: FolderSizeInfo = {
+              path: fullPath,
+              name: relativeName || entry.name,
+              size: formatSize(sizeBytes),
+              sizeBytes,
+              type: isDirectory ? "folder" : "file",
+              children: []
+            };
 
-          if (isDirectory && currentDepth < maxDepth - 1) {
-            try {
-              item.children = await buildTree(
-                fullPath,
-                maxDepth,
-                currentDepth + 1
-              );
-            } catch {
-              item.children = [];
+            if (isDirectory && currentDepth < maxDepth - 1) {
+              try {
+                item.children = await buildTree(
+                  fullPath,
+                  maxDepth,
+                  currentDepth + 1
+                );
+              } catch {
+                item.children = [];
+              }
             }
-          }
 
-          items.push(item);
+            items.push(item);
+          } catch {
+            // skip entries outside allowed paths
+          }
         })
     );
 

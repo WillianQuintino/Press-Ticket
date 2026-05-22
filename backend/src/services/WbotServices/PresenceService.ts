@@ -33,7 +33,7 @@ class PresenceService {
 
       // Aguardar a duração especificada
       if (state !== "available" && duration > 0) {
-        const safeDuration = Math.min(Math.max(0, Number(duration)), 30_000);
+        const safeDuration = Math.min(Math.max(0, Number(duration) || 0), 30_000);
         await new Promise(resolve => setTimeout(resolve, safeDuration));
       }
     } catch (error) {
