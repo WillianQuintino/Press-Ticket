@@ -1,6 +1,6 @@
 # 📐 Architecture Overview — Press Ticket®
 
-> **Versão do sistema:** v1.16.1  
+> **Versão do sistema:** v1.16.3  
 > **Última atualização:** Maio/2026  
 > **Autor:** Robson Tenório  
 > **Repositório:** https://github.com/rtenorioh/Press-Ticket
@@ -9,7 +9,7 @@
 
 ## 1. Visão Geral
 
-O **Press Ticket®** é uma plataforma de atendimento multicanal desenvolvida para centralizar a comunicação com clientes via WhatsApp, Facebook, Instagram, Telegram e WebChat em uma única interface. O sistema organiza atendimentos em tickets, filas (setores) e oferece automações via integrações externas.
+O **Press Ticket®** é uma plataforma de atendimento multicanal desenvolvida para centralizar a comunicação com clientes via WhatsApp, Facebook, Instagram, Telegram, WebChat e Email em uma única interface. O sistema organiza atendimentos em tickets, filas (setores) e oferece automações via integrações externas.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -65,7 +65,7 @@ O **Press Ticket®** é uma plataforma de atendimento multicanal desenvolvida pa
 │  │  React + Vite        │◄──────►│  Node 22 + Express + TypeScript  │  │
 │  │  MUI v6              │  HTTP  │  Sequelize ORM                   │  │
 │  │  Socket.io-client    │◄──────►│  Socket.io (realtime)            │  │
-│  │  react-i18next       │   WS   │  Bull (filas de jobs)            │  │
+│  │  react-i18next       │   WS   │  node-cron (jobs agendados)      │  │
 │  │  Port: 3333          │        │  Port: 8080                      │  │
 │  └──────────────────────┘        └──────────┬───────────────────────┘  │
 │                                             │                           │
@@ -93,13 +93,13 @@ O **Press Ticket®** é uma plataforma de atendimento multicanal desenvolvida pa
 | Camada         | Tecnologia                   | Versão |
 | -------------- | ---------------------------- | ------ |
 | Runtime        | Node.js                      | 22.x   |
-| Linguagem      | TypeScript                   | ~5.x   |
+| Linguagem      | TypeScript                   | ^6.0.3 |
 | Framework      | Express                      | ^4.x   |
 | ORM            | Sequelize                    | ^6.x   |
 | Banco de dados | MySQL                        | 8.x    |
 | Realtime       | Socket.io                    | ^4.x   |
-| Filas de jobs  | Bull                         | ^4.x   |
-| WhatsApp       | whatsapp-web.js              | ^1.27+ |
+| Jobs agendados | node-cron                    | ^3.0.3 |
+| WhatsApp       | whatsapp-web.js              | ^1.34.7|
 | Autenticação   | JWT (access + refresh token) | —      |
 | Processo       | PM2                          | —      |
 
@@ -108,7 +108,7 @@ O **Press Ticket®** é uma plataforma de atendimento multicanal desenvolvida pa
 | Camada     | Tecnologia        | Versão |
 | ---------- | ----------------- | ------ |
 | Framework  | React             | ^18.x  |
-| Build tool | Vite              | ^5.x   |
+| Build tool | Vite              | ^6.4.2 |
 | UI Library | MUI (Material UI) | v6     |
 | Realtime   | Socket.io-client  | ^4.x   |
 | i18n       | react-i18next     | —      |
@@ -139,6 +139,9 @@ backend/
 │   ├── services/        # Lógica de negócio (por domínio)
 │   ├── helpers/         # Utilitários e funções reutilizáveis
 │   ├── libs/            # Integrações externas (socket, wbot, etc.)
+│   ├── jobs/            # Tarefas agendadas (node-cron)
+│   ├── types/           # Definições de tipos TypeScript
+│   ├── utils/           # Logger (Pino) e utilitários internos
 │   ├── database/
 │   │   ├── migrations/  # Versionamento do schema
 │   │   └── seeds/       # Dados iniciais
@@ -164,14 +167,22 @@ backend/
 ```
 frontend/
 ├── src/
+│   ├── assets/          # Recursos estáticos (imagens, ícones)
 │   ├── components/      # Componentes reutilizáveis
-│   ├── pages/           # Telas principais (uma por rota)
+│   ├── config/          # Configurações da aplicação frontend
 │   ├── context/         # React Context (Auth, Socket, Theme)
+│   ├── errors/          # Tratamento de erros no cliente
+│   ├── helpers/         # Funções auxiliares
 │   ├── hooks/           # Custom hooks
+│   ├── layout/          # Componentes de estrutura de layout
+│   ├── pages/           # Telas principais (uma por rota)
+│   ├── routes/          # Definição de rotas React Router
 │   ├── services/        # Chamadas de API (axios)
-│   ├── rules/           # Permissões por perfil
+│   ├── themes/          # Temas MUI (light/dark)
 │   ├── translate/       # Arquivos i18n (pt-BR, en)
-│   └── App.jsx          # Rotas e providers
+│   ├── utils/           # Utilitários genéricos
+│   ├── rules.js         # Permissões por perfil
+│   └── App.js           # Rotas e providers
 ```
 
 ---
@@ -277,6 +288,10 @@ Atendente visualiza e responde pelo painel
 # Ambiente
 NODE_ENV=production
 
+# Identificação
+COMPANY_NAME=pressticket
+DEVICE_NAME=pressticket
+
 # URLs
 BACKEND_URL=https://api.seudominio.com.br
 FRONTEND_URL=https://app.seudominio.com.br
@@ -294,12 +309,26 @@ DB_TIMEZONE=-03:00
 JWT_SECRET=<chave_segura>
 JWT_REFRESH_SECRET=<chave_segura>
 
+# Criptografia de secrets no banco (AES-256-GCM)
+# Gere com: openssl rand -hex 32
+ENCRYPTION_KEY=<chave_hex_64_chars>
+
 # Limites
 USER_LIMIT=10
 CONNECTIONS_LIMIT=5
 
 # Chrome (whatsapp-web.js)
 CHROME_BIN=/usr/bin/google-chrome
+
+# Modo demonstração (ON bloqueia operações destrutivas)
+DEMO=OFF
+
+# Telemetria anônima
+ALLOW_TELEMETRY=true
+
+# IDs dos processos PM2
+PM2_FRONTEND=0
+PM2_BACKEND=1
 ```
 
 ---
@@ -346,6 +375,10 @@ Nginx (porta 80/443 — SSL via Let's Encrypt)
               │  Whatsapp     │
               │  (conexão)    │
               └───────────────┘
+
+Outros modelos relevantes: ApiToken, ActivityLog, Email,
+Integration, Setting, QuickAnswer, UserSession, ErrorLog,
+Personalization, MessageReaction, TicketLabel
 ```
 
 ---
@@ -361,20 +394,23 @@ Nginx (porta 80/443 — SSL via Let's Encrypt)
 | ADR-005 | PM2 como gerenciador de processos                 | Zero-downtime reload, logs integrados, cluster mode                 |
 | ADR-006 | JWT com refresh token                             | Segurança sem perda de UX (sessões longas controladas)              |
 | ADR-007 | react-i18next para traduções                      | Padrão de mercado, suporte a namespaces e lazy loading              |
+| ADR-008 | node-cron em vez de Bull para jobs agendados      | Bull removido; jobs simples (telemetria, update check) não precisam de fila Redis |
+| ADR-009 | Criptografia AES-256-GCM para secrets no banco    | API tokens passaram a armazenar hash + valor cifrado (`ENCRYPTION_KEY`) |
+| ADR-010 | helmet + express-rate-limit para hardening HTTP   | Redução de superfície de ataque sem overhead operacional relevante  |
 
 ---
 
 ## 15. Pontos de Atenção e Melhorias Futuras
 
-| Item                 | Prioridade | Descrição                                           |
-| -------------------- | ---------- | --------------------------------------------------- |
-| Testes automatizados | 🔴 Alta    | Ausência de testes unitários e E2E                  |
-| CI/CD pipeline       | 🔴 Alta    | Deploy ainda manual via SSH                         |
-| Observabilidade      | 🟡 Média   | Sem rastreamento de erros centralizado (ex: Sentry) |
-| Rate limiting de API | 🟡 Média   | Endpoints externos sem throttle configurado         |
-| Healthcheck endpoint | 🟡 Média   | Sem rota de status para monitoramento externo       |
-| Documentação Swagger | 🟢 Baixa   | Parcialmente implementado, necessita expansão       |
+| Item                 | Prioridade | Descrição                                                                      |
+| -------------------- | ---------- | ------------------------------------------------------------------------------ |
+| Testes automatizados | 🔴 Alta    | Testes unitários existem em `__tests__/unit/` mas cobertura ainda é limitada   |
+| Observabilidade      | 🟡 Média   | Sem rastreamento de erros centralizado (ex: Sentry)                            |
+| Healthcheck endpoint | 🟡 Média   | Sem rota de status para monitoramento externo                                  |
+| Documentação Swagger | 🟢 Baixa   | Parcialmente implementado, necessita expansão                                  |
+| ~~CI/CD pipeline~~   | ~~🔴~~     | ~~Deploy manual via SSH~~ — GitHub Actions ativo (`ci.yml`, `codeql.yml`, `release.yml`) |
+| ~~Rate limiting~~    | ~~🟡~~     | ~~Sem throttle~~ — `express-rate-limit ^8.4.1` implementado em múltiplas rotas |
 
 ---
 
-_Documento gerado como parte da iniciativa de documentação técnica do Press Ticket® — v1.16.1_
+_Documento gerado como parte da iniciativa de documentação técnica do Press Ticket® — v1.16.3_
