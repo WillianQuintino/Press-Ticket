@@ -11,6 +11,50 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [v1.16.3] - 2026-05-22
+
+### 🔒 Segurança
+
+- [security: corrigir 207 alertas CodeQL (Fases 1-4)](https://github.com/rtenorioh/Press-Ticket/commit/b241dbd1c32069bc11f7d6b39b462585b142c879)
+- [security: corrigir 7 alertas Critical CodeQL (segunda passagem)](https://github.com/rtenorioh/Press-Ticket/commit/5a207a33f5bfca711ae6cd3f58be710edba50a52)
+- [security: corrigir 4 alertas Critical/High CodeQL (terceira passagem)](https://github.com/rtenorioh/Press-Ticket/commit/24caf5650ce0ec0fbb56225e2f14ceed9d61fd0b)
+- [security: corrigir 4 alertas Critical CodeQL (quarta passagem)](https://github.com/rtenorioh/Press-Ticket/commit/1aef26646d129f4108f0e80a2c5d16751fc39a20)
+- [security: corrigir 3 alertas Critical (análise de fluxo real)](https://github.com/rtenorioh/Press-Ticket/commit/145310624981fe2efc0eeccd57f405f67cae3642)
+- [security: corrigir alertas High reais restantes](https://github.com/rtenorioh/Press-Ticket/commit/261f9234f2001b9c378d9c8675e7d7817fd44b69)
+- [security: corrigir DiskSpaceService e PresenceService (High reais)](https://github.com/rtenorioh/Press-Ticket/commit/6c38519f480fee7193183000ea2fc7aa3831f86c)
+
+### 🐛 Corrigido
+
+- [fix: remover logger não usado e corrigir Prettier](https://github.com/rtenorioh/Press-Ticket/commit/b969c1e597f12e0a5084b01bd2fab7c9ea6c3cf1)
+- [fix: remover 23 unused vars/imports no frontend (CodeQL Notes)](https://github.com/rtenorioh/Press-Ticket/commit/dd9fe34e9e89a0d07053f737095a207cff9c43d0)
+
+### 🔄 Alterado
+
+- [refactor(types): Tipar controllers (any → unknown/interfaces)](https://github.com/rtenorioh/Press-Ticket/commit/37fe45c894ddbee47fb6f781900459574046579f)
+- [refactor: melhorar a formatação e a legibilidade do código em vários arquivos](https://github.com/rtenorioh/Press-Ticket/commit/d383c573245607e85d1a0eabf54a89b8f56a0fdb)
+- [refactor: remover importação no componente SystemHealth não usada](https://github.com/rtenorioh/Press-Ticket/commit/3f9f0aa0a6d0ab3b9cc72bf1e74560118fd5a35c)
+
+### 🎨 Estilo
+
+- [style: aplicar Prettier em todo o backend (926 warnings)](https://github.com/rtenorioh/Press-Ticket/commit/b700f68e9f15742a5dbd9b47008eb1d00c389db5)
+- [style: zerar todos os warnings do backend](https://github.com/rtenorioh/Press-Ticket/commit/6d3a31798518b7d689fc9136cd81d19aecbba01d)
+- [style: Prettier e cleanup de unused vars no frontend](https://github.com/rtenorioh/Press-Ticket/commit/ed4c5fa0db58f4cda69acdbf33483226be310eca)
+- [style: adicionar badge de análise de segurança do CodeQL no README](https://github.com/rtenorioh/Press-Ticket/commit/abbe961ea59e657cf0a0f541934d86a3650c735d)
+
+### ⚙️ CI/CD
+
+- [ci: atualizar actions para Node.js 24 e CodeQL v4](https://github.com/rtenorioh/Press-Ticket/commit/9f2f33fd4ce56173396b1066f100a027ad3d100b)
+
+### 📚 Documentação
+
+- [docs: adiciona CHANGELOG, CONTRIBUTING, SECURITY e atualiza workflows](https://github.com/rtenorioh/Press-Ticket/commit/d192ee25f27187b2b5efed01c3f039c3baa2393e)
+
+### 🔧 Manutenção
+
+- [chore: atualizar versão do sistema para v1.16.3](https://github.com/rtenorioh/Press-Ticket/commit/06a29cad6c99364c6c132a0e0c780feaa9446abf)
+
+---
+
 ## [v1.16.2] - 2026-05-16
 
 ### 🚀 Adicionado
