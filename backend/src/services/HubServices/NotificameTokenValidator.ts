@@ -28,9 +28,11 @@ class NotificameTokenValidator {
       return response.data;
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
-      logger.error("NotificameTokenValidator: erro ao validar token:", errMsg);
-      // Em caso de falha no endpoint de validação, permite continuar
-      return { isValid: true };
+      logger.error(
+        "NotificameTokenValidator: falha ao validar token — bloqueando por segurança:",
+        errMsg
+      );
+      return { isValid: false };
     }
   }
 }

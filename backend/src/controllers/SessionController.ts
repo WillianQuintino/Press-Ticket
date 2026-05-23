@@ -136,7 +136,10 @@ export const forgotPassword = async (
   const token = crypto.randomBytes(32).toString("hex");
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-  user.passwordResetToken = token;
+  user.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
   user.passwordResetExpires = new Date(Date.now() + 30 * 60 * 1000);
   await user.save();
 
@@ -200,9 +203,11 @@ export const resetPassword = async (
 ): Promise<Response> => {
   const { token, newPassword } = req.body;
 
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
   const user = await User.findOne({
     where: {
-      passwordResetToken: token,
+      passwordResetToken: tokenHash,
       passwordResetExpires: { [Op.gt]: new Date() }
     }
   });

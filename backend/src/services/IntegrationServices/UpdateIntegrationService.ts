@@ -1,5 +1,8 @@
 import AppError from "../../errors/AppError";
 import Integration from "../../models/Integration";
+import { encryptValue } from "../../helpers/EncryptionHelper";
+
+const SENSITIVE_INTEGRATION_KEYS = new Set(["hubToken", "apiMaps"]);
 
 interface Request {
   key: string;
@@ -18,7 +21,11 @@ const UpdateIntegrationService = async ({
     throw new AppError("ERR_NO_INTEGRATION_FOUND", 404);
   }
 
-  await integration.update({ value });
+  const storedValue = SENSITIVE_INTEGRATION_KEYS.has(key)
+    ? encryptValue(value)
+    : value;
+
+  await integration.update({ value: storedValue });
 
   return integration;
 };

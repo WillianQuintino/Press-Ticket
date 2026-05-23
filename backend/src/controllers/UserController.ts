@@ -66,7 +66,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     email,
     password,
     name,
-    profile,
+    profile: req.url === "/signup" ? "user" : profile,
     isTricked,
     queueIds,
     whatsappIds,

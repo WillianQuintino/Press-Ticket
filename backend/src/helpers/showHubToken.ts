@@ -1,4 +1,5 @@
 import Setting from "../models/Integration";
+import { decryptValue } from "./EncryptionHelper";
 
 export const showHubToken = async (): Promise<string> => {
   const notificameHubToken = await Setting.findOne({
@@ -11,5 +12,6 @@ export const showHubToken = async (): Promise<string> => {
     throw new Error("Notificame Hub token not found");
   }
 
-  return notificameHubToken.value.trim().replace(/[\r\n]/g, "");
+  const raw = notificameHubToken.value.trim().replace(/[\r\n]/g, "");
+  return decryptValue(raw);
 };

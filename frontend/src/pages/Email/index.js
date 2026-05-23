@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 import {
   Avatar,
   Badge,
@@ -543,7 +544,12 @@ const EmailPage = () => {
               {selectedEmail.bodyHtml ? (
                 <Box
                   sx={{ "& img": { maxWidth: "100%" }, "& a": { color: "primary.main" } }}
-                  dangerouslySetInnerHTML={{ __html: selectedEmail.bodyHtml }}
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(selectedEmail.bodyHtml, {
+                      FORBID_TAGS: ["script", "iframe", "object", "embed", "form"],
+                      FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover"]
+                    })
+                  }}
                 />
               ) : (
                 <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>

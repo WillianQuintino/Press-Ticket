@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import Setting from "../models/Setting";
+import { decryptValue } from "../helpers/EncryptionHelper";
 import { logger } from "../utils/logger";
 
 interface EmailOptions {
@@ -29,7 +30,7 @@ class EmailService {
         ]);
 
       const user = emailUser?.value?.trim() || "";
-      const pass = emailPass?.value?.trim() || "";
+      const pass = emailPass?.value ? decryptValue(emailPass.value.trim()) : "";
       const host = emailHost?.value?.trim() || "smtp.gmail.com";
       const port = parseInt(emailPort?.value || "587");
       const smtpSecure = smtpSecureSetting?.value?.trim() || "tls";

@@ -31,6 +31,9 @@ class ApiToken extends Model<
   @Column
   token: string;
 
+  @Column
+  tokenHash: string;
+
   @Column({
     type: DataType.TEXT,
     allowNull: true,

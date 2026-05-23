@@ -21,6 +21,7 @@ import Settings from "../../models/Setting";
 import Ticket from "../../models/Ticket";
 
 import { debounce } from "../../helpers/Debounce";
+import { decryptValue } from "../../helpers/EncryptionHelper";
 import formatBody from "../../helpers/Mustache";
 import { getIO } from "../../libs/socket";
 import { logger } from "../../utils/logger";
@@ -296,7 +297,8 @@ const getGeocode = async (
   const safeLatitude = encodeURIComponent(String(latitude).trim());
   const safeLongitude = encodeURIComponent(String(longitude).trim());
 
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${safeLatitude},${safeLongitude}&key=${encodeURIComponent(apiKey?.value || "")}`;
+  const rawApiKey = apiKey?.value ? decryptValue(apiKey.value) : "";
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${safeLatitude},${safeLongitude}&key=${encodeURIComponent(rawApiKey)}`;
 
   try {
     const response = await axios.get(url);

@@ -1,9 +1,12 @@
+import crypto from "crypto";
 import AppError from "../../errors/AppError";
 import ApiToken from "../../models/ApiToken";
 
 const FindByTokenService = async (token: string): Promise<ApiToken> => {
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
   const apiToken = await ApiToken.findOne({
-    where: { token }
+    where: { tokenHash }
   });
 
   if (!apiToken) {
