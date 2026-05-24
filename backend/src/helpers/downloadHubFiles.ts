@@ -46,7 +46,7 @@ const ALLOWED_HOSTS = new Set([
   "media.notificamehub.com"
 ]);
 
-function validateFileUrl(rawUrl: string): string {
+export function validateFileUrl(rawUrl: string): string {
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);

@@ -17,6 +17,7 @@ import uploadConfig from "./config/upload";
 import "./database";
 import AppError from "./errors/AppError";
 import routes from "./routes";
+import healthRoutes from "./routes/healthRoutes";
 import openApiRoutes from "./routes/openApiRoutes";
 
 const app = express();
@@ -192,6 +193,7 @@ app.use(
   },
   express.static(uploadConfig.directory)
 );
+app.use(healthRoutes);
 app.use(rateLimiter);
 app.use(routes);
 app.use(updateLastActivity);
