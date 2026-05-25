@@ -78,13 +78,98 @@ jobs:
           REACT_APP_BACKEND_URL: http://localhost:8080 # Valor fictício apenas para o build passar
 
   # ─────────────────────────────────────────────────────────
-  # JOB 3 — Sumário da versão (só roda quando é uma tag)
+  # JOB 3 — Testes
+  # Roda os testes unitários do backend com banco MySQL real
+  # ─────────────────────────────────────────────────────────
+  test:
+    name: 🧪 Backend — Testes
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test_password
+          MYSQL_DATABASE: press_ticket_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      NODE_ENV: test
+      DB_DIALECT: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASS: test_password
+      DB_NAME: press_ticket_test
+      DB_TIMEZONE: "-03:00"
+      JWT_SECRET: ci_test_jwt_secret_value
+      JWT_REFRESH_SECRET: ci_test_jwt_refresh_secret_value
+      ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      BACKEND_URL: http://localhost
+      FRONTEND_URL: http://localhost:3000
+      COMPANY_NAME: pressticket
+
+    steps:
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: 📦 Instalação das dependências
+        run: npm install
+
+      - name: 🏗️ Build (necessário para o Sequelize CLI ler dist/config/database.js)
+        run: npm run build
+
+      - name: ⏳ Aguardar MySQL ficar pronto
+        run: |
+          echo "Aguardando MySQL..."
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -u root -ptest_password --silent 2>/dev/null; then
+              echo "MySQL pronto!"
+              break
+            fi
+            echo "Tentativa $i/30..."
+            sleep 2
+          done
+
+      - name: 🗄️ Criar banco de dados de teste
+        run: |
+          mysql -h 127.0.0.1 -u root -ptest_password -e \
+            "CREATE DATABASE IF NOT EXISTS press_ticket_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+      - name: 🔄 Migrations e Seeds
+        run: |
+          npx sequelize-cli db:migrate --env test
+          npx sequelize-cli db:seed:all --env test
+
+      - name: 🧪 Rodar testes
+        run: npx jest --forceExit --passWithNoTests
+
+      - name: 🧹 Desfazer migrations (cleanup)
+        if: always()
+        run: npx sequelize-cli db:migrate:undo:all --env test
+
+  # ─────────────────────────────────────────────────────────
+  # JOB 4 — Sumário da versão (só roda quando é uma tag)
   # Exibe um resumo no GitHub quando uma nova versão é tagueada
   # ─────────────────────────────────────────────────────────
   release-summary:
     name: 🏷️ Sumário da versão
     runs-on: ubuntu-latest
-    needs: [backend, frontend]
+    needs: [backend, frontend, test]
     if: startsWith(github.ref, 'refs/tags/') # Só roda em tags como v1.17.0
 
     steps:
@@ -97,6 +182,7 @@ jobs:
           echo "| Backend — Instalação | ✅ OK |" >> $GITHUB_STEP_SUMMARY
           echo "| Backend — TypeCheck  | ✅ OK |" >> $GITHUB_STEP_SUMMARY
           echo "| Backend — Build      | ✅ OK |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend — Testes     | ✅ OK |" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend — Instalação| ✅ OK |" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend — Build     | ✅ OK |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
