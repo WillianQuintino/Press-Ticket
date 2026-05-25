@@ -91,7 +91,8 @@ module.exports = {
   preset: "ts-jest",
 
   transform: {
-    "^.+\\.tsx?$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.test.json" }]
+    "^.+\\.tsx?$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.test.json" }],
+    "^.+\\.js$": ["ts-jest", { tsconfig: { allowJs: true }, diagnostics: false }]
   },
 
   // Run tests from one or more projects

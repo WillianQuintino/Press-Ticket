@@ -32,10 +32,14 @@ export default {
   },
 
   down: async (queryInterface: QueryInterface) => {
-    const [results] = (await queryInterface.sequelize.query(
-      "SHOW CREATE TABLE Tickets;"
-    )) as unknown as [ShowCreateResult[]];
-    const createTableSql = results[0]["Create Table"];
+    const fetchCreateTable = async (): Promise<string> => {
+      const [results] = (await queryInterface.sequelize.query(
+        "SHOW CREATE TABLE Tickets;"
+      )) as unknown as [ShowCreateResult[]];
+      return results[0]["Create Table"];
+    };
+
+    let createTableSql = await fetchCreateTable();
 
     if (
       createTableSql.includes("CONSTRAINT `Tickets_queueId_custom_foreign`")
@@ -44,18 +48,21 @@ export default {
         "Tickets",
         "Tickets_queueId_custom_foreign"
       );
+      createTableSql = await fetchCreateTable();
     }
 
-    await queryInterface.addConstraint("Tickets", {
-      fields: ["queueId"],
-      type: "foreign key",
-      name: "Tickets_queueId_foreign_idx",
-      references: {
-        table: "Queues",
-        field: "id"
-      },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE"
-    });
+    if (!createTableSql.includes("CONSTRAINT `Tickets_queueId_foreign_idx`")) {
+      await queryInterface.addConstraint("Tickets", {
+        fields: ["queueId"],
+        type: "foreign key",
+        name: "Tickets_queueId_foreign_idx",
+        references: {
+          table: "Queues",
+          field: "id"
+        },
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE"
+      });
+    }
   }
 };
