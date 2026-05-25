@@ -40,17 +40,22 @@ export const rateLimiter = rateLimit({
   max: isDevelopment ? 10_000 : 300,
   message: { error: "Muitas requisições. Tente novamente em 15 minutos." },
   standardHeaders: true,
-  legacyHeaders: false,
-  skip: req => {
-    // Exclui rotas de health check do rate limiting global
-    return req.path === "/health" || req.path === "/healthcheck";
-  }
+  legacyHeaders: false
 });
 
 // Rate limiter permissivo para rotas de webhook (chamadas server-to-server)
 export const webhookLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minuto
   max: 500,
+  message: { error: "Rate limit excedido" },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate limiter para health check — permissivo para monitoring tools, mas com teto
+export const healthLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: 60, // 60 req/min por IP — suficiente para PM2, Prometheus, UptimeRobot
   message: { error: "Rate limit excedido" },
   standardHeaders: true,
   legacyHeaders: false

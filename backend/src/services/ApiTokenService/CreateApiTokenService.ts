@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import AppError from "../../errors/AppError";
 import ApiToken from "../../models/ApiToken";
 
 interface TokenData {
@@ -20,8 +21,12 @@ const CreateApiTokenService = async ({
   permissions
 }: TokenData): Promise<CreatedToken> => {
   const plainToken = crypto.randomUUID();
+  const hmacSecret = process.env.ENCRYPTION_KEY;
+  if (!hmacSecret) {
+    throw new AppError("ENCRYPTION_KEY não configurada", 500);
+  }
   const tokenHash = crypto
-    .createHash("sha256")
+    .createHmac("sha256", hmacSecret)
     .update(plainToken)
     .digest("hex");
 
