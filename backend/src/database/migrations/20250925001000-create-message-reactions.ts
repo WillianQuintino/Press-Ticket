@@ -57,26 +57,14 @@ module.exports = {
   },
 
   down: async (queryInterface: QueryInterface) => {
-    await queryInterface.removeIndex(
-      "MessageReactions",
-      "idx_message_reactions_message_emoji"
-    );
-    await queryInterface.removeIndex(
-      "MessageReactions",
-      "uniq_message_reactions_message_sender"
-    );
-    await queryInterface.removeIndex(
-      "MessageReactions",
-      "idx_message_reactions_senderId"
-    );
-    await queryInterface.removeIndex(
-      "MessageReactions",
-      "idx_message_reactions_emoji"
-    );
-    await queryInterface.removeIndex(
-      "MessageReactions",
-      "idx_message_reactions_messageId"
-    );
+    try {
+      await queryInterface.removeConstraint(
+        "MessageReactions",
+        "MessageReactions_messageId_foreign_idx"
+      );
+    } catch (_err) {
+      // constraint name may vary; dropTable handles remaining FKs and indexes
+    }
     await queryInterface.dropTable("MessageReactions");
   }
 };
