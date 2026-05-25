@@ -36,6 +36,9 @@ jobs:
       - name: 📦 Instalação limpa das dependências
         run: npm install # Simula exatamente o que o usuário faz ao instalar
 
+      - name: 🔒 Auditoria de segurança
+        run: npm audit --audit-level=high # Falha se houver HIGH ou CRITICAL
+
       - name: 🔍 Verificação de tipos (TypeScript)
         run: npx tsc --noEmit # Garante que não há erros de tipo no código
 
@@ -129,6 +132,9 @@ jobs:
 
       - name: 📦 Instalação das dependências
         run: npm install
+
+      - name: 🔒 Auditoria de segurança
+        run: npm audit --audit-level=high # Falha se houver HIGH ou CRITICAL
 
       - name: 🏗️ Build (necessário para o Sequelize CLI ler dist/config/database.js)
         run: npm run build
