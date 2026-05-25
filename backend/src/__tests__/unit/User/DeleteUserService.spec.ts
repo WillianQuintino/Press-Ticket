@@ -4,6 +4,23 @@ import CreateUserService from "../../../services/UserServices/CreateUserService"
 import DeleteUserService from "../../../services/UserServices/DeleteUserService";
 import { disconnect, truncate } from "../../utils/database";
 
+jest.mock("../../../config/auth", () => ({
+  __esModule: true,
+  default: {
+    secret: "test_jwt_secret",
+    expiresIn: "8h",
+    refreshSecret: "test_jwt_refresh_secret",
+    refreshExpiresIn: "1d"
+  }
+}));
+
+jest.mock("../../../libs/socket", () => ({
+  getIO: jest.fn(() => ({
+    emit: jest.fn(),
+    to: jest.fn(() => ({ emit: jest.fn() }))
+  }))
+}));
+
 describe("User", () => {
   beforeEach(async () => {
     await truncate();
