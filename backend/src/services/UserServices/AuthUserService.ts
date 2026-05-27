@@ -4,10 +4,12 @@ import {
   createRefreshToken
 } from "../../helpers/CreateTokens";
 import { SerializeUser } from "../../helpers/SerializeUser";
+import CheckSettings from "../../helpers/CheckSettings";
 import { getIO } from "../../libs/socket";
 import Queue from "../../models/Queue";
 import User from "../../models/User";
 import UserSession from "../../models/UserSession";
+import sequelize from "../../database";
 
 interface Request {
   email: string;
@@ -73,63 +75,86 @@ const AuthUserService = async ({
     throw new AppError("ERR_INVALID_CREDENTIALS", 401);
   }
 
-  const lastSession = await UserSession.findOne({
-    where: {
-      userId: user.id,
-      logoutAt: null
-    }
-  });
-
-  if (lastSession) {
-    const lastActivity = new Date(lastSession.lastActivity).getTime();
-    const currentTime = new Date().getTime();
-    const diffHours = (currentTime - lastActivity) / (1000 * 60 * 60);
-
-    if (diffHours >= 8) {
-      await lastSession.update({
-        logoutAt: new Date()
-      });
-
-      await user.update({
-        online: false,
-        currentSessionId: null
-      });
-
-      try {
-        const io = getIO();
-        io.emit("userSessionExpired", {
-          userId: user.id,
-          expired: true,
-          message: "ERR_SESSION_EXPIRED"
-        });
-      } catch {
-        // Socket.IO ainda não inicializado — expiração registrada sem broadcast
-      }
-
-      throw new AppError("ERR_SESSION_EXPIRED", 401);
-    }
-
-    await lastSession.update({
-      lastActivity: new Date()
-    });
-  } else {
-    const newSessionId = crypto.randomUUID();
-
-    await UserSession.create({
-      userId: user.id,
-      sessionId: newSessionId,
-      loginAt: new Date(),
-      lastActivity: new Date()
-    });
-
-    await user.update({
-      online: true,
-      currentSessionId: newSessionId
-    });
+  let sessionTimeoutHours = 8;
+  try {
+    const timeoutValue = await CheckSettings("sessionTimeout");
+    sessionTimeoutHours = parseInt(timeoutValue, 10) || 8;
+  } catch {
+    // Setting não encontrado, usa o padrão de 8 horas
   }
 
-  // Mark online and broadcast only after session is validated/created
-  await user.update({ online: true });
+  await sequelize.transaction(async t => {
+    const lastSession = await UserSession.findOne({
+      where: {
+        userId: user.id,
+        logoutAt: null
+      },
+      transaction: t,
+      lock: t.LOCK.UPDATE
+    });
+
+    if (lastSession) {
+      const lastActivity = new Date(lastSession.lastActivity).getTime();
+      const currentTime = new Date().getTime();
+      const diffHours = (currentTime - lastActivity) / (1000 * 60 * 60);
+
+      // Sessão expirada: encerrar a antiga e criar uma nova — não bloquear o login
+      if (diffHours >= sessionTimeoutHours) {
+        await lastSession.update({ logoutAt: new Date() }, { transaction: t });
+        await user.update(
+          { online: false, currentSessionId: null },
+          { transaction: t }
+        );
+
+        try {
+          const io = getIO();
+          io.emit("userSessionExpired", {
+            userId: user.id,
+            expired: true,
+            message: "ERR_SESSION_EXPIRED"
+          });
+        } catch {
+          // Socket.IO ainda não inicializado — broadcast não-crítico ignorado
+        }
+
+        const newSessionId = crypto.randomUUID();
+        await UserSession.create(
+          {
+            userId: user.id,
+            sessionId: newSessionId,
+            loginAt: new Date(),
+            lastActivity: new Date()
+          },
+          { transaction: t }
+        );
+        await user.update(
+          { online: true, currentSessionId: newSessionId },
+          { transaction: t }
+        );
+      } else {
+        await lastSession.update(
+          { lastActivity: new Date() },
+          { transaction: t }
+        );
+        await user.update({ online: true }, { transaction: t });
+      }
+    } else {
+      const newSessionId = crypto.randomUUID();
+      await UserSession.create(
+        {
+          userId: user.id,
+          sessionId: newSessionId,
+          loginAt: new Date(),
+          lastActivity: new Date()
+        },
+        { transaction: t }
+      );
+      await user.update(
+        { online: true, currentSessionId: newSessionId },
+        { transaction: t }
+      );
+    }
+  });
 
   try {
     const io = getIO();
