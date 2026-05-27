@@ -31,6 +31,7 @@ export const SocketProvider = ({ children }) => {
             if (newSocket) {
                 newSocket.off('connect');
                 newSocket.off('disconnect');
+                newSocket.disconnect();
             }
         };
     }, []);

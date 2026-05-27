@@ -52,6 +52,19 @@ export const webhookLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Rate limiter dedicado para forgot-password (previne spam de e-mail)
+export const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: isDevelopment ? 100 : 5,
+  message: {
+    error:
+      "Muitas tentativas de recuperação de senha. Tente novamente em 1 hora."
+  },
+  skipSuccessfulRequests: false,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // Rate limiter para health check — permissivo para monitoring tools, mas com teto
 export const healthLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minuto

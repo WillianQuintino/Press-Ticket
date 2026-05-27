@@ -58,7 +58,7 @@ const connectToSocket = () => {
             const user = JSON.parse(localStorage.getItem("user") || "{}");
             if (user && user.id) {
                 socket.emit("getTickets", { userId: user.id });
-                socket.emit("userStatus", { userId: user.id, status: "online" });
+                socket.emit("userStatus", { userId: user.id, online: true });
                 socket.emit("subscribeTicketCounter");
                 socket.emit("joinNotification");
             }

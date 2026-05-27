@@ -1,7 +1,7 @@
 import { Router } from "express";
 import * as SessionController from "../controllers/SessionController";
 import * as UserController from "../controllers/UserController";
-import { authLimiter } from "../config/rateLimiter";
+import { authLimiter, forgotPasswordLimiter } from "../config/rateLimiter";
 
 const authRoutes = Router();
 
@@ -10,7 +10,7 @@ authRoutes.post("/signup", authLimiter, UserController.store);
 authRoutes.post("/login", authLimiter, SessionController.store);
 authRoutes.post(
   "/forgot-password",
-  authLimiter,
+  forgotPasswordLimiter,
   SessionController.forgotPassword
 );
 authRoutes.post(

@@ -110,11 +110,12 @@ export const remove = async (
         logger.error(`Erro ao criar log de logout: ${error}`);
       }
 
-      const io = require("../libs/socket").getIO();
-      io.emit("userSessionUpdate", {
-        userId: user.id,
-        online: false
-      });
+      try {
+        const { getIO } = require("../libs/socket");
+        getIO().emit("userSessionUpdate", { userId: user.id, online: false });
+      } catch {
+        // Socket.IO não inicializado — logout prossegue normalmente
+      }
     }
   }
 
@@ -130,7 +131,11 @@ export const forgotPassword = async (
 
   const user = await User.findOne({ where: { email } });
   if (!user) {
-    throw new AppError("E-mail não encontrado.", 404);
+    // Retorna 200 genérico para evitar enumeração de usuários (OWASP A01)
+    return res.status(200).json({
+      message:
+        "Se este e-mail estiver cadastrado, você receberá as instruções em breve."
+    });
   }
 
   const token = crypto.randomBytes(32).toString("hex");

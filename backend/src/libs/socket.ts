@@ -123,26 +123,26 @@ export const initIO = (httpServer: Server): void => {
         socket.join(userId.toString());
       } catch (err) {
         logger.error("Erro ao processar usuário do socket", {
-          error: err.message,
+          error: err instanceof Error ? err.message : "Erro interno",
           socketId: socket.id,
           userId
         });
         socket.disconnect();
       }
     } catch (err) {
-      if (err.name === "JsonWebTokenError") {
+      if (err instanceof Error && err.name === "JsonWebTokenError") {
         logger.warn("Conexão rejeitada: Token inválido", {
           error: err.message,
           socketId: socket.id
         });
-      } else if (err.name === "TokenExpiredError") {
+      } else if (err instanceof Error && err.name === "TokenExpiredError") {
         logger.warn("Conexão rejeitada: Token expirado", {
           error: err.message,
           socketId: socket.id
         });
       } else {
         logger.error("Erro na validação do token", {
-          error: err.message,
+          error: err instanceof Error ? err.message : "Erro interno",
           socketId: socket.id
         });
       }
@@ -154,45 +154,49 @@ export const initIO = (httpServer: Server): void => {
         await User.update({ online }, { where: { id: userId } });
       } catch (err) {
         logger.error("Erro ao atualizar status do usuário", {
-          error: err.message,
+          error: err instanceof Error ? err.message : "Erro interno",
           userId,
           online
         });
       }
     });
 
-    socket.on("disconnect", async () => {
+    // userId captured from the connection-time token verification above;
+    // avoids re-verifying an already-expired token at disconnect time.
+    const connectedUserId = (() => {
       try {
-        const { id: userId } = verify(
-          token as string,
-          authConfig.secret
-        ) as TokenPayload;
-        const userRoom = io.sockets.adapter.rooms.get(userId.toString());
+        const decoded = verify(token, authConfig.secret) as TokenPayload;
+        return decoded.id;
+      } catch {
+        return null;
+      }
+    })();
+
+    socket.on("disconnect", async () => {
+      if (!connectedUserId) return;
+      try {
+        const userRoom = io.sockets.adapter.rooms.get(connectedUserId.toString());
         const hasConnectedSockets = userRoom && userRoom.size > 0;
 
         if (!hasConnectedSockets) {
-          await User.update({ online: false }, { where: { id: userId } });
+          await User.update({ online: false }, { where: { id: connectedUserId } });
         }
       } catch (err) {
         logger.error("Erro ao processar desconexão", {
-          error: err.message,
+          error: err instanceof Error ? err.message : "Erro interno",
           socketId: socket.id
         });
       }
     });
 
     socket.on("logout", async () => {
+      if (!connectedUserId) return;
       try {
-        const { id: userId } = verify(
-          token as string,
-          authConfig.secret
-        ) as TokenPayload;
-        await User.update({ online: false }, { where: { id: userId } });
-
-        socket.leave(userId.toString());
+        await User.update({ online: false }, { where: { id: connectedUserId } });
+        socket.leave(connectedUserId.toString());
       } catch (err) {
         logger.error("Erro ao processar logout", {
-          error: err.message,
+          error: err instanceof Error ? err.message : "Erro interno",
           socketId: socket.id
         });
       }
@@ -216,10 +220,14 @@ export const initIO = (httpServer: Server): void => {
 
     socket.on("getTickets", async (data: GetTicketsData) => {
       try {
-        const { id: userId } = verify(
-          token as string,
-          authConfig.secret
-        ) as TokenPayload;
+        const userId = connectedUserId;
+
+        if (!userId) {
+          logger.warn("getTickets rejeitado: userId não disponível", {
+            socketId: socket.id
+          });
+          return;
+        }
 
         if (userId !== data.userId && data.userId) {
           logger.warn("Tentativa de acesso a tickets de outro usuário", {
