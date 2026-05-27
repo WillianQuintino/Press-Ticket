@@ -127,15 +127,17 @@ export const forgotPassword = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  // Resposta genérica usada em todos os branches para evitar enumeração de usuários (OWASP A01 / AUTH-M01)
+  const FORGOT_PASSWORD_RESPONSE = {
+    message:
+      "Se este e-mail estiver cadastrado, você receberá as instruções em breve."
+  };
+
   const { email } = req.body;
 
   const user = await User.findOne({ where: { email } });
   if (!user) {
-    // Retorna 200 genérico para evitar enumeração de usuários (OWASP A01)
-    return res.status(200).json({
-      message:
-        "Se este e-mail estiver cadastrado, você receberá as instruções em breve."
-    });
+    return res.status(200).json(FORGOT_PASSWORD_RESPONSE);
   }
 
   const token = crypto.randomBytes(32).toString("hex");
@@ -199,7 +201,7 @@ export const forgotPassword = async (
     logger.error(`Erro ao criar log de solicitação de senha: ${error}`);
   }
 
-  return res.status(200).json({ message: "E-mail enviado com sucesso." });
+  return res.status(200).json(FORGOT_PASSWORD_RESPONSE);
 };
 
 export const resetPassword = async (
