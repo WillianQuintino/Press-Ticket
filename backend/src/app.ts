@@ -145,7 +145,7 @@ app.use(express.raw({ limit: "500mb" }));
 app.use(express.urlencoded({ limit: "500mb", extended: true }));
 
 const openApiCorsOptions = {
-  credentials: true,
+  credentials: false, // origin "*" + credentials true é inválido pela spec CORS
   origin: "*",
   allowedHeaders: ["Content-Type", "Authorization", "x-api-token"]
 };
@@ -153,11 +153,6 @@ const openApiCorsOptions = {
 if (process.env.NODE_ENV !== "production") {
   app.use(
     "/api-docs",
-    (req: Request, res: Response, next: NextFunction) => {
-      res.setHeader("X-Frame-Options", "ALLOWALL");
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      next();
-    },
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec, {
       customCss: ".swagger-ui .topbar { display: none }",
