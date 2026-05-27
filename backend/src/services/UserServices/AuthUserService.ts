@@ -73,14 +73,6 @@ const AuthUserService = async ({
     throw new AppError("ERR_INVALID_CREDENTIALS", 401);
   }
 
-  await user.update({ online: true });
-
-  const io = getIO();
-  io.emit("userSessionUpdate", {
-    userId: user.id,
-    online: true
-  });
-
   const lastSession = await UserSession.findOne({
     where: {
       userId: user.id,
@@ -103,11 +95,16 @@ const AuthUserService = async ({
         currentSessionId: null
       });
 
-      io.emit("userSessionExpired", {
-        userId: user.id,
-        expired: true,
-        message: "ERR_SESSION_EXPIRED"
-      });
+      try {
+        const io = getIO();
+        io.emit("userSessionExpired", {
+          userId: user.id,
+          expired: true,
+          message: "ERR_SESSION_EXPIRED"
+        });
+      } catch {
+        // Socket.IO ainda não inicializado — expiração registrada sem broadcast
+      }
 
       throw new AppError("ERR_SESSION_EXPIRED", 401);
     }
@@ -129,6 +126,19 @@ const AuthUserService = async ({
       online: true,
       currentSessionId: newSessionId
     });
+  }
+
+  // Mark online and broadcast only after session is validated/created
+  await user.update({ online: true });
+
+  try {
+    const io = getIO();
+    io.emit("userSessionUpdate", {
+      userId: user.id,
+      online: true
+    });
+  } catch {
+    // Socket.IO ainda não inicializado — login prossegue normalmente
   }
 
   const token = createAccessToken(user);
