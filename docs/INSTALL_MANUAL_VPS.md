@@ -86,6 +86,60 @@ exit;
 service mariadb restart
 ```
 
+## Seção 2.11: Configuração de Performance do Banco de Dados
+
+### 2.11 Configurando o innodb_lock_wait_timeout
+
+O Press Ticket® utiliza transações com `SELECT ... FOR UPDATE` para evitar race conditions
+durante logins simultâneos. O valor padrão do MariaDB/MySQL (50 segundos) é muito alto
+para esse cenário — um lock travado deixaria conexões presas por quase 1 minuto.
+
+Configure para 10 segundos:
+
+```bash
+sudo mysql -u root -p
+```
+
+```sql
+-- Verificar o valor atual
+SHOW VARIABLES LIKE 'innodb_lock_wait_timeout';
+
+-- Aplicar o novo valor em runtime (efeito imediato, sem restart)
+SET GLOBAL innodb_lock_wait_timeout = 10;
+
+-- Confirmar
+SHOW VARIABLES LIKE 'innodb_lock_wait_timeout';
+
+-- Sair
+exit;
+```
+
+Persistir no arquivo de configuração para sobreviver a restarts:
+
+```bash
+sudo nano /etc/mysql/my.cnf
+```
+
+Adicione dentro do bloco `[mysqld]`:
+
+```ini
+[mysqld]
+innodb_lock_wait_timeout = 10
+```
+
+Salve com `Ctrl+O`, `Enter`, `Ctrl+X`.
+
+**Por que 10 segundos?**
+
+| Cenário                    | Valor padrão (50s)                   | Valor configurado (10s)                   |
+| -------------------------- | ------------------------------------ | ----------------------------------------- |
+| Lock travado durante login | Usuário aguarda 50s na tela de login | Erro rápido em 10s, pode tentar novamente |
+| Pool de conexões           | Pode esgotar em pico de carga        | Libera conexões 5x mais rápido            |
+| Comportamento em produção  | Cascata de timeouts visível          | Recuperação automática rápida             |
+
+> **Nota**: A alteração com `SET GLOBAL` tem efeito imediato sem necessidade de
+> reiniciar o MariaDB. O `my.cnf` garante que a configuração persista após reboots.
+
 ## Seção 3: Configuração do Usuário
 
 ### 3.1 Criando o usuário deploy
@@ -377,7 +431,7 @@ Preencha com as informações abaixo, atualizando as informações de acordo com
 ```
 server {
   server_name front.pressticket.com.br;
-  
+
   # Security Headers
   add_header X-Frame-Options "SAMEORIGIN" always;
   add_header X-Content-Type-Options "nosniff" always;
@@ -385,7 +439,7 @@ server {
   add_header Referrer-Policy "strict-origin-when-cross-origin" always;
   add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" always;
   add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://www.youtube-nocookie.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; media-src 'self' https: blob:; connect-src 'self' https://back.pressticket.com.br wss://back.pressticket.com.br; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self';" always;
-  
+
   location / {
     proxy_pass http://127.0.0.1:3000;
     proxy_http_version 1.1;
@@ -582,6 +636,7 @@ curl -I https://front.pressticket.com.br/ | grep -i "x-frame\|content-security\|
 ```
 
 Você deve ver os seguintes headers:
+
 - `X-Frame-Options: SAMEORIGIN`
 - `X-Content-Type-Options: nosniff`
 - `X-XSS-Protection: 1; mode=block`

@@ -28,6 +28,83 @@ RED="\e[31m"
 RESET="\e[0m"
 BOLD="\e[1m"
 
+# Função para configurar innodb_lock_wait_timeout
+configure_innodb() {
+    local DB_SERVICE="${1:-mariadb}"   # mariadb ou mysql
+    local TARGET_VALUE=10
+    local MYCNF="/etc/mysql/my.cnf"
+ 
+    echo -e "${COLOR}Configurando innodb_lock_wait_timeout...${RESET}" | tee -a "$LOG_FILE"
+ 
+    # 1. Lê o valor atual (sem senha — root via socket)
+    CURRENT_VALUE=$(sudo mysql -u root -N -s \
+        -e "SHOW VARIABLES LIKE 'innodb_lock_wait_timeout';" 2>/dev/null \
+        | awk '{print $2}')
+ 
+    if [ -z "$CURRENT_VALUE" ]; then
+        # Tenta com senha se a leitura sem senha falhou
+        CURRENT_VALUE=$(sudo MYSQL_PWD="$DB_PASS" mysql -u root -N -s \
+            -e "SHOW VARIABLES LIKE 'innodb_lock_wait_timeout';" 2>/dev/null \
+            | awk '{print $2}')
+    fi
+ 
+    echo -e "${COLOR}Valor atual de innodb_lock_wait_timeout: ${CURRENT_VALUE}s${RESET}" | tee -a "$LOG_FILE"
+ 
+    if [ "$CURRENT_VALUE" = "$TARGET_VALUE" ]; then
+        echo -e "${GREEN}innodb_lock_wait_timeout já está em ${TARGET_VALUE}s. Nenhuma ação necessária.${RESET}" | tee -a "$LOG_FILE"
+        return 0
+    fi
+ 
+    # 2. Aplica em runtime (efeito imediato, sem restart)
+    echo -e "${COLOR}Aplicando innodb_lock_wait_timeout=${TARGET_VALUE} em runtime...${RESET}" | tee -a "$LOG_FILE"
+ 
+    if sudo mysql -u root -e "SET GLOBAL innodb_lock_wait_timeout = ${TARGET_VALUE};" 2>/dev/null; then
+        echo -e "${GREEN}Valor aplicado em runtime com sucesso.${RESET}" | tee -a "$LOG_FILE"
+    elif sudo MYSQL_PWD="$DB_PASS" mysql -u root \
+            -e "SET GLOBAL innodb_lock_wait_timeout = ${TARGET_VALUE};" 2>/dev/null; then
+        echo -e "${GREEN}Valor aplicado em runtime com sucesso (usando senha).${RESET}" | tee -a "$LOG_FILE"
+    else
+        echo -e "${YELLOW}Aviso: Não foi possível aplicar innodb_lock_wait_timeout em runtime. Apenas persistindo no my.cnf.${RESET}" | tee -a "$LOG_FILE"
+    fi
+ 
+    # 3. Persiste no my.cnf para sobreviver a restarts
+    echo -e "${COLOR}Persistindo innodb_lock_wait_timeout no ${MYCNF}...${RESET}" | tee -a "$LOG_FILE"
+ 
+    if [ ! -f "$MYCNF" ]; then
+        sudo bash -c "printf '[mysqld]\ninnodb_lock_wait_timeout = ${TARGET_VALUE}\n' > $MYCNF"
+        echo -e "${GREEN}Arquivo ${MYCNF} criado com a configuração.${RESET}" | tee -a "$LOG_FILE"
+    elif grep -q "innodb_lock_wait_timeout" "$MYCNF"; then
+        # Já existe — atualiza o valor
+        sudo sed -i "s/innodb_lock_wait_timeout\s*=.*/innodb_lock_wait_timeout = ${TARGET_VALUE}/" "$MYCNF"
+        echo -e "${GREEN}Valor atualizado no ${MYCNF}.${RESET}" | tee -a "$LOG_FILE"
+    else
+        # Adiciona dentro de [mysqld] se existir, senão cria o bloco
+        if grep -q "^\[mysqld\]" "$MYCNF"; then
+            sudo sed -i "/^\[mysqld\]/a innodb_lock_wait_timeout = ${TARGET_VALUE}" "$MYCNF"
+        else
+            sudo bash -c "printf '\n[mysqld]\ninnodb_lock_wait_timeout = ${TARGET_VALUE}\n' >> $MYCNF"
+        fi
+        echo -e "${GREEN}Configuração adicionada ao ${MYCNF}.${RESET}" | tee -a "$LOG_FILE"
+    fi
+ 
+    # 4. Confirma que está ativo
+    FINAL_VALUE=$(sudo mysql -u root -N -s \
+        -e "SHOW VARIABLES LIKE 'innodb_lock_wait_timeout';" 2>/dev/null \
+        | awk '{print $2}')
+ 
+    if [ -z "$FINAL_VALUE" ]; then
+        FINAL_VALUE=$(sudo MYSQL_PWD="$DB_PASS" mysql -u root -N -s \
+            -e "SHOW VARIABLES LIKE 'innodb_lock_wait_timeout';" 2>/dev/null \
+            | awk '{print $2}')
+    fi
+ 
+    if [ "$FINAL_VALUE" = "$TARGET_VALUE" ]; then
+        echo -e "${GREEN}✔ innodb_lock_wait_timeout confirmado em ${TARGET_VALUE}s.${RESET}" | tee -a "$LOG_FILE"
+    else
+        echo -e "${YELLOW}Aviso: innodb_lock_wait_timeout está em ${FINAL_VALUE}s. O valor será aplicado após o próximo restart do ${DB_SERVICE}.${RESET}" | tee -a "$LOG_FILE"
+    fi
+}
+
 # Obter a versão automaticamente
 VERSION=$(git ls-remote --tags https://github.com/rtenorioh/Press-Ticket.git | awk -F/ '{print $NF}' | sort -V | tail -n1 || echo "unknown")
 
@@ -493,6 +570,8 @@ EOF
         fi
     } | tee -a "$LOG_FILE"
 fi
+
+configure_innodb "$DB_SERVICE"
 
 # Seção 3: Configuração do Usuário
 echo -e "${COLOR}Configurando o usuário deploy...${RESET}" | tee -a "$LOG_FILE"
