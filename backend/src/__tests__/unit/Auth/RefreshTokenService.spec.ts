@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { sign } from "jsonwebtoken";
 import { Response } from "express";
-import AppError from "../../../errors/AppError";
 import User from "../../../models/User";
 import UserSession from "../../../models/UserSession";
 import { RefreshTokenService } from "../../../services/AuthServices/RefreshTokenService";

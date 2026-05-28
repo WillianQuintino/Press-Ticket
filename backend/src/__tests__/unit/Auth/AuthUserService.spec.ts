@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import AppError from "../../../errors/AppError";
 import User from "../../../models/User";
 import UserSession from "../../../models/UserSession";
 import AuthUserService from "../../../services/UserServices/AuthUserService";
