@@ -1,16 +1,12 @@
-// Sobe backend (8000) e frontend (3000) num container só, via PM2.
-// Sempre com pm2-runtime (foreground) — nunca `pm2 start`.
-// process.execPath = caminho absoluto do Node que executa este arquivo,
-// garantindo que o PM2 use o MESMO Node para os processos filhos.
-const NODE = process.execPath;
-
+// Sobe os dois serviços do Press Ticket num container só, via PM2.
+// Use sempre com `pm2-runtime start ecosystem.config.js` (foreground),
+// nunca `pm2 start` — em container o PM2 precisa rodar em primeiro plano.
 module.exports = {
   apps: [
     {
       name: "press-ticket-backend",
       cwd: "./backend",
       script: "dist/server.js",
-      interpreter: NODE,
       node_args: "--no-deprecation",
       instances: 1,
       autorestart: true,
@@ -24,7 +20,6 @@ module.exports = {
       name: "press-ticket-frontend",
       cwd: "./frontend",
       script: "server.js",
-      interpreter: NODE,
       node_args: "--no-deprecation",
       instances: 1,
       autorestart: true,
