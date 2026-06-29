@@ -18,7 +18,7 @@
       "commands": [
         { "cmd": "npm --prefix backend run build", "customName": "Build backend" },
         { "cmd": "npm --prefix frontend run build", "customName": "Build frontend" },
-        { "cmd": "npm install -g pm2", "customName": "Install PM2" }
+        { "cmd": "npm --prefix backend install pm2 sequelize-cli --no-save", "customName": "Install PM2 + sequelize-cli (local)" }
       ]
     }
   },
@@ -32,8 +32,9 @@
     "variables": {
       "NODE_ENV": "production",
       "CHROME_BIN": "/usr/bin/chromium",
-      "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium"
+      "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium",
+      "PATH": "/mise/shims:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     },
-    "startCommand": "npm --prefix backend exec -- sequelize db:migrate && pm2-runtime start ecosystem.config.js"
+    "startCommand": "(cd backend && node node_modules/.bin/sequelize db:migrate) && node backend/node_modules/.bin/pm2-runtime start ecosystem.config.js"
   }
 }
