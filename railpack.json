@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "node",
+  "packages": {
+    "node": "22"
+  },
+  "steps": {
+    "install": {
+      "commands": [
+        { "src": ".", "dest": "." },
+        { "cmd": "npm --prefix backend ci", "customName": "Install backend deps" },
+        { "cmd": "npm --prefix frontend ci", "customName": "Install frontend deps" }
+      ]
+    },
+    "build": {
+      "inputs": [{ "step": "install" }],
+      "secrets": ["VITE_BACKEND_URL", "VITE_HOURS_CLOSE_TICKETS_AUTO", "VITE_MASTERADMIN"],
+      "commands": [
+        { "cmd": "npm --prefix backend run build", "customName": "Build backend" },
+        { "cmd": "npm --prefix frontend run build", "customName": "Build frontend" },
+        { "cmd": "npm install -g pm2", "customName": "Install PM2" }
+      ]
+    }
+  },
+  "deploy": {
+    "aptPackages": [
+      "chromium",
+      "ffmpeg",
+      "ca-certificates",
+      "fonts-liberation"
+    ],
+    "variables": {
+      "NODE_ENV": "production",
+      "CHROME_BIN": "/usr/bin/chromium",
+      "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium"
+    },
+    "startCommand": "npm --prefix backend exec -- sequelize db:migrate && pm2-runtime start ecosystem.config.js"
+  }
+}
