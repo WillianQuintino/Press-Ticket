@@ -36,6 +36,6 @@
       "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium",
       "PATH": "/app/.node-bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     },
-    "startCommand": "(cd backend && /app/.node-bin/node node_modules/.bin/sequelize db:migrate) && /app/.node-bin/node backend/node_modules/.bin/pm2-runtime start ecosystem.config.js"
+    "startCommand": "(cd backend && NODE_PATH=/app/backend/node_modules /app/.node-bin/node /app/ensure-database.js) && (cd backend && /app/.node-bin/node node_modules/.bin/sequelize db:migrate) && /app/.node-bin/node backend/node_modules/.bin/pm2-runtime start ecosystem.config.js"
   }
 }
