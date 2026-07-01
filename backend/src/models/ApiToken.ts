@@ -40,8 +40,16 @@ class ApiToken extends Model<
     defaultValue: "[]",
     get(this: ApiToken): string[] {
       try {
-        const value = this.getDataValue("permissions") as string;
-        return value ? JSON.parse(value) : [];
+        const value = this.getDataValue("permissions") as unknown;
+        // A coluna no banco é do tipo JSON: o driver do MySQL já retorna um
+        // array parseado na leitura. Só aplica JSON.parse quando vier string.
+        if (Array.isArray(value)) {
+          return value as string[];
+        }
+        if (typeof value === "string") {
+          return value ? JSON.parse(value) : [];
+        }
+        return [];
       } catch (error) {
         logger.error(`Error parsing permissions: ${error}`);
         return [];
