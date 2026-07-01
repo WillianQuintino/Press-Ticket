@@ -1,7 +1,7 @@
 import CssBaseline from "@mui/material/CssBaseline";
 import { ptBR } from "@mui/material/locale";
 import { ThemeProvider } from "@mui/material/styles";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "react-toastify/dist/ReactToastify.css";
 import { SocketProvider, useSocket } from './context/SocketContext';
 import { ForwardingMessageProvider } from './context/ForwardingMessage';
@@ -23,13 +23,13 @@ const AppContent = () => {
     localStorage.setItem("theme", newTheme);
   };
 
-  const onThemeConfigUpdate = (themeType, config) => {
+  const onThemeConfigUpdate = useCallback((themeType, config) => {
     if (themeType === "light") {
       setLightThemeConfig(prevConfig => ({ ...prevConfig, ...config }));
     } else if (themeType === "dark") {
       setDarkThemeConfig(prevConfig => ({ ...prevConfig, ...config }));
     }
-  };
+  }, []);
 
   useEffect(() => {
     const fetchPersonalizations = async () => {
