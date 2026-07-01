@@ -758,6 +758,16 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
     ],
   );
 
+  // Refs para acessar sempre o valor mais recente sem colocar messagesList /
+  // scrollToBottom nas dependências do effect de socket/polling abaixo.
+  // Sem isso, o effect re-registrava listeners + interval a cada mensagem.
+  const messagesListRef = useRef(messagesList);
+  const scrollToBottomRef = useRef(scrollToBottom);
+  useEffect(() => {
+    messagesListRef.current = messagesList;
+    scrollToBottomRef.current = scrollToBottom;
+  });
+
   useEffect(() => {
     const processMessage = (data) => {
       lastSocketEventTime.current = Date.now();
@@ -775,7 +785,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
         messageTicketIdStr === currentTicketIdStr
       ) {
         if (data.action === "create") {
-          const messageExists = messagesList.some(
+          const messageExists = messagesListRef.current.some(
             (m) => m.id === data.message.id,
           );
 
@@ -785,7 +795,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
 
               setTimeout(() => {
                 try {
-                  scrollToBottom(true);
+                  scrollToBottomRef.current(true);
 
                   const messageElement = document.getElementById(
                     data.message.id,
@@ -875,13 +885,13 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
       const { message, ticketId: messageTicketId } = event.detail;
 
       if (parseInt(messageTicketId) === parseInt(ticketId)) {
-        const messageExists = messagesList.some((m) => m.id === message.id);
+        const messageExists = messagesListRef.current.some((m) => m.id === message.id);
 
         if (!messageExists) {
           dispatch({ type: "ADD_MESSAGE", payload: message });
 
           setTimeout(() => {
-            scrollToBottom(true);
+            scrollToBottomRef.current(true);
           }, 0);
         }
       }
@@ -926,7 +936,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
             let updatedMessages = 0;
 
             data.messages.forEach((message) => {
-              const existingMessageIndex = messagesList.findIndex(
+              const existingMessageIndex = messagesListRef.current.findIndex(
                 (m) => m.id === message.id,
               );
 
@@ -934,7 +944,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
                 dispatch({ type: "ADD_MESSAGE", payload: message });
                 hasNewMessages = true;
               } else if (
-                messagesList[existingMessageIndex].ack !== message.ack
+                messagesListRef.current[existingMessageIndex].ack !== message.ack
               ) {
                 dispatch({ type: "UPDATE_MESSAGE", payload: message });
                 updatedMessages++;
@@ -943,7 +953,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
 
             if (hasNewMessages) {
               setTimeout(() => {
-                scrollToBottom(true);
+                scrollToBottomRef.current(true);
               }, 0);
             }
           }
@@ -969,7 +979,7 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
       clearInterval(refreshInterval);
       socket.emit("leaveChatBox", ticketId);
     };
-  }, [ticketId, messagesList, scrollToBottom]);
+  }, [ticketId]);
 
   const renderReactions = (message) => {
     const reactions = message.reactions || {};

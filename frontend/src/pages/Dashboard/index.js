@@ -11,7 +11,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import PeopleIcon from "@mui/icons-material/People";
 import SendIcon from "@mui/icons-material/Send";
-import { lazy, Suspense, useContext, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Can } from "../../components/Can";
 import { AuthContext } from "../../context/Auth/AuthContext";
@@ -119,7 +119,9 @@ const Dashboard = () => {
 	const { user } = useContext(AuthContext);
 	const { count: usersCount, online: onlineUsers } = useUsers();
 	const { sent: sentMessages, received: receivedMessages } = useMessages();
-	const userQueueIds = user?.queues?.map(q => q.id) || [];
+	// Memoizado: sem isso, um novo array a cada render fazia ChatsPerQueue
+	// (via useTickets) refazer GET /tickets em toda re-renderização do Dashboard.
+	const userQueueIds = useMemo(() => user?.queues?.map(q => q.id) || [], [user]);
 	const isAdmin = user?.profile === 'admin';
 
 	const previousCountsRef = useRef({

@@ -116,43 +116,17 @@ const Login = () => {
   const [user, setUser] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const { handleLogin } = useContext(AuthContext);
-  const [theme, setTheme] = useState("light");
+  const [theme] = useState(() => localStorage.getItem("theme") || "light");
   const [companyData, setCompanyData] = useState({
     logo: null,
     name: "Press Ticket®",
     url: "https://github.com/rtenorioh/Press-Ticket"
   });
 
+  // Um único fetch de /personalizations: antes eram dois effects (name/url e
+  // logo), e o setTheme do primeiro disparava o segundo, gerando 2-3 requests.
   useEffect(() => {
     const fetchCompanyData = async () => {
-      try {
-        const { data } = await api.get("/personalizations");
-
-        if (data && data.length > 0) {
-
-          const lightConfig = data.find(themeConfig => themeConfig.theme === "light");
-
-          if (lightConfig) {
-            setCompanyData(prevData => ({
-              ...prevData,
-              name: lightConfig.company || "Press Ticket®",
-              url: lightConfig.url || "https://github.com/rtenorioh/Press-Ticket"
-            }));
-          }
-        }
-      } catch (err) {
-        toastError(err);
-      }
-    };
-
-    const savedTheme = localStorage.getItem("theme") || "light";
-    setTheme(savedTheme);
-
-    fetchCompanyData();
-  }, []);
-
-  useEffect(() => {
-    const fetchLogo = async () => {
       try {
         const { data } = await api.get("/personalizations");
 
@@ -160,30 +134,31 @@ const Login = () => {
           const lightConfig = data.find(themeConfig => themeConfig.theme === "light");
           const darkConfig = data.find(themeConfig => themeConfig.theme === "dark");
 
-          if (theme === "light" && lightConfig && lightConfig.logo) {
-            setCompanyData(prevData => ({
-              ...prevData,
-              logo: lightConfig.logo
-            }));
-          } else if (theme === "dark" && darkConfig && darkConfig.logo) {
-            setCompanyData(prevData => ({
-              ...prevData,
-              logo: darkConfig.logo
-            }));
-          } else {
-            setCompanyData(prevData => ({
-              ...prevData,
-              logo: null
-            }));
-          }
-        }
+          setCompanyData(prevData => {
+            const next = { ...prevData };
 
+            if (lightConfig) {
+              next.name = lightConfig.company || "Press Ticket®";
+              next.url = lightConfig.url || "https://github.com/rtenorioh/Press-Ticket";
+            }
+
+            if (theme === "light" && lightConfig && lightConfig.logo) {
+              next.logo = lightConfig.logo;
+            } else if (theme === "dark" && darkConfig && darkConfig.logo) {
+              next.logo = darkConfig.logo;
+            } else {
+              next.logo = null;
+            }
+
+            return next;
+          });
+        }
       } catch (err) {
         toastError(err);
       }
     };
 
-    fetchLogo();
+    fetchCompanyData();
   }, [theme]);
 
   const handleChangeInput = (e) => {
