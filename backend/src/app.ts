@@ -26,7 +26,8 @@ app.set("trust proxy", 1);
 
 app.use((req, res, next) => {
   if (
-    process.env.NODE_ENV !== "production" &&
+    (process.env.NODE_ENV !== "production" ||
+      process.env.ENABLE_API_DOCS === "true") &&
     (req.path === "/api-docs" || req.path.startsWith("/api-docs/"))
   ) {
     helmet({
@@ -150,7 +151,10 @@ const openApiCorsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "x-api-token"]
 };
 
-if (process.env.NODE_ENV !== "production") {
+if (
+  process.env.NODE_ENV !== "production" ||
+  process.env.ENABLE_API_DOCS === "true"
+) {
   app.use(
     "/api-docs",
     swaggerUi.serve,
