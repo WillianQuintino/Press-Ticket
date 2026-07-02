@@ -912,10 +912,15 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
 
     const refreshInterval = setInterval(() => {
       const timestamp = new Date().toISOString();
+      // Com socket conectado, o realtime entrega as mensagens; o polling vira
+      // só rede de segurança a cada 30s. Desconectado, cai para 5s (catch-up).
+      // Sem isso, um ticket parado (sem evento novo) fazia GET /messages a cada
+      // 5s indefinidamente, estourando o rate limit.
+      const graceMs = socket && socket.connected ? 30000 : 5000;
       const timeSinceLastSocketUpdate =
         Date.now() - lastSocketEventTime.current;
 
-      if (timeSinceLastSocketUpdate < 5000) {
+      if (timeSinceLastSocketUpdate < graceMs) {
         return;
       }
 
@@ -957,6 +962,9 @@ const MessagesList = ({ ticketId, isGroup, ticket, onClick }) => {
               }, 0);
             }
           }
+
+          // Marca o instante da sincronização para espaçar o próximo polling.
+          lastSocketEventTime.current = Date.now();
         } catch (err) {
           console.error(
             `[FRONT_POLLING_ERRO][${timestamp}] Erro ao buscar mensagens recentes:`,
