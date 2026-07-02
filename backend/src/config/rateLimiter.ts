@@ -34,10 +34,18 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// Rate limiter global — aplicado em todas as rotas antes do roteador principal
+// Rate limiter global — aplicado em todas as rotas antes do roteador principal.
+// O front faz polling (ex.: /messages a cada 5s), então 300/15min estoura com
+// um único usuário. Configurável via RATE_LIMIT_MAX; default de produção 2000.
+const globalMax = process.env.RATE_LIMIT_MAX
+  ? parseInt(process.env.RATE_LIMIT_MAX, 10)
+  : isDevelopment
+  ? 10_000
+  : 2000;
+
 export const rateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: isDevelopment ? 10_000 : 300,
+  max: globalMax,
   message: { error: "Muitas requisições. Tente novamente em 15 minutos." },
   standardHeaders: true,
   legacyHeaders: false
