@@ -22,7 +22,21 @@ import openApiRoutes from "./routes/openApiRoutes";
 
 const app = express();
 
-app.set("trust proxy", 1);
+// Nº de proxies confiáveis para o req.ip usado pelo rate limiter.
+// Atrás de Cloudflare + Traefik (Coolify) são ~2 saltos; com o valor errado
+// todos os clientes caem no mesmo IP e dividem o mesmo balde de limite.
+// Configurável via TRUST_PROXY (número, "true" ou string). Default: 1.
+const trustProxyEnv = process.env.TRUST_PROXY;
+app.set(
+  "trust proxy",
+  trustProxyEnv === undefined
+    ? 1
+    : /^\d+$/.test(trustProxyEnv)
+    ? Number(trustProxyEnv)
+    : trustProxyEnv === "true"
+    ? true
+    : trustProxyEnv
+);
 
 app.use((req, res, next) => {
   if (
