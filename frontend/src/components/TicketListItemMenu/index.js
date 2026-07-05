@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import {
   IconButton,
   Menu,
@@ -6,6 +6,7 @@ import {
   ListItemIcon,
   ListItemText,
   CircularProgress,
+  Divider,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -15,9 +16,12 @@ import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useTranslation } from "react-i18next";
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
+import { AuthContext } from "../../context/Auth/AuthContext";
+import ConfirmationModal from "../ConfirmationModal";
 
 const ArrowButton = styled(IconButton)(({ theme }) => ({
   padding: 2,
@@ -44,9 +48,32 @@ const StyledMenuItem = styled(MenuItem)(({ theme }) => ({
 
 const TicketListItemMenu = ({ ticket, onToggle }) => {
   const { t } = useTranslation();
+  const { user } = useContext(AuthContext);
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const open = Boolean(anchorEl);
+
+  const canDelete =
+    user && (user.profile === "admin" || user.profile === "masteradmin");
+
+  const handleOpenDelete = (e) => {
+    if (e) e.stopPropagation();
+    setAnchorEl(null);
+    setDeleteOpen(true);
+  };
+
+  const handleDelete = async () => {
+    setLoading(true);
+    try {
+      await api.delete(`/tickets/${ticket.id}`);
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setLoading(false);
+      setDeleteOpen(false);
+    }
+  };
 
   const handleOpen = (e) => {
     e.stopPropagation();
@@ -148,9 +175,32 @@ const TicketListItemMenu = ({ ticket, onToggle }) => {
                 }
               />
             </StyledMenuItem>,
+            ...(canDelete
+              ? [
+                  <Divider key="divider-delete" />,
+                  <StyledMenuItem
+                    key="delete"
+                    onClick={handleOpenDelete}
+                    sx={{ color: "error.main" }}
+                  >
+                    <ListItemIcon>
+                      <DeleteOutlineIcon fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText primary={t("ticketListMenu.delete")} />
+                  </StyledMenuItem>,
+                ]
+              : []),
           ]
         )}
       </Menu>
+      <ConfirmationModal
+        title={t("ticketListMenu.deleteConfirmTitle")}
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDelete}
+      >
+        {t("ticketListMenu.deleteConfirmMessage")}
+      </ConfirmationModal>
     </>
   );
 };

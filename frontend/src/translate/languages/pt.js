@@ -982,6 +982,10 @@ const messages = {
         unfavorite: "Remover dos favoritos",
         pinLimitReached: "Limite de 3 tickets fixados atingido",
         favoritedIndicator: "Este ticket está nos favoritos",
+        delete: "Remover ticket",
+        deleteConfirmTitle: "Remover Ticket",
+        deleteConfirmMessage:
+          "ATENÇÃO: isto vai APAGAR este ticket DE VEZ (não é possível desfazer) e não envia mensagem ao contato. Deseja continuar?",
       },
       ticketLabelsFilter: {
         all: "Tudo",
