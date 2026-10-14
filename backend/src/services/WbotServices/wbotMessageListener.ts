@@ -1,12 +1,14 @@
 import axios from "axios";
 import { writeFile } from "fs";
 import { join } from "path";
-import { promisify } from "util";
 import { Op } from "sequelize";
+import { promisify } from "util";
 
 import {
   Client,
   MessageAck,
+  MessageMedia,
+  Chat as WbotChat,
   Contact as WbotContact,
   Message as WbotMessage
 } from "whatsapp-web.js";
@@ -21,8 +23,19 @@ import Settings from "../../models/Setting";
 import Ticket from "../../models/Ticket";
 
 import { debounce } from "../../helpers/Debounce";
+import emitMaskedToSockets from "../../helpers/emitMaskedToSockets";
 import { decryptValue } from "../../helpers/EncryptionHelper";
 import formatBody from "../../helpers/Mustache";
+import { sanitizeMessageBody } from "../../helpers/sanitizeMessageBody";
+import {
+  MediaDownloadError,
+  MediaType,
+  downloadAndDecryptMedia
+} from "../../helpers/whatsappMediaDecrypt";
+import {
+  serializeContact,
+  withMaskedMessageContacts
+} from "../../helpers/serializeContact";
 import { getIO } from "../../libs/socket";
 import { logger } from "../../utils/logger";
 import CreateContactService from "../ContactServices/CreateContactService";
@@ -34,8 +47,8 @@ import FindOrCreateTicketService from "../TicketServices/FindOrCreateTicketServi
 import UpdateTicketService from "../TicketServices/UpdateTicketService";
 import ShowWhatsAppService from "../WhatsappService/ShowWhatsAppService";
 import {
-  incrementMessageCount,
   incrementErrorCount,
+  incrementMessageCount,
   updateLastActivity
 } from "./HealthCheckService";
 
@@ -138,6 +151,177 @@ const verifyRevoked = async (msgBody?: string): Promise<void> => {
   }
 };
 
+interface DownloadMediaResult {
+  media: MessageMedia;
+  degraded: boolean;
+}
+
+const SUPPORTED_MANUAL_DECRYPT_TYPES: ReadonlySet<string> = new Set([
+  "image",
+  "video",
+  "audio",
+  "ptt",
+  "document",
+  "sticker"
+]);
+
+const downloadMediaWithFallback = async (
+  msg: WbotMessage,
+  context: string
+): Promise<DownloadMediaResult | null> => {
+  try {
+    const media = await msg.downloadMedia();
+    if (media?.data) {
+      return { media, degraded: false };
+    }
+  } catch (err) {
+    logger.warn(
+      `[WBOT] downloadMedia falhou (${context}) para mensagem ${msg.id?.id || "unknown"}: ${err}. Tentando fallback via decriptacao manual.`
+    );
+  }
+
+  const rawData = (msg as unknown as { _data?: WbotMessageRawData })._data;
+
+  if (
+    rawData?.directPath &&
+    rawData?.mediaKey &&
+    rawData?.type &&
+    SUPPORTED_MANUAL_DECRYPT_TYPES.has(rawData.type)
+  ) {
+    try {
+      const decrypted = await downloadAndDecryptMedia({
+        directPath: rawData.directPath,
+        mediaKey: rawData.mediaKey,
+        type: rawData.type as MediaType
+      });
+
+      logger.info(
+        `[WBOT] Midia recuperada via decriptacao manual (directPath/mediaKey) para mensagem ${msg.id?.id || "unknown"} (${context}).`
+      );
+
+      return {
+        media: new MessageMedia(
+          rawData.mimetype || "application/octet-stream",
+          decrypted.toString("base64"),
+          rawData.filename || null,
+          rawData.size || null
+        ),
+        degraded: false
+      };
+    } catch (err) {
+      if (err instanceof MediaDownloadError) {
+        const isFormatValidationError = err.message.includes(
+          "formato inesperado"
+        );
+        const reason = isFormatValidationError
+          ? "directPath invalido (falha de validacao de formato)"
+          : "erro de rede/HTTP, provavel directPath expirado";
+
+        logger.warn(
+          `[WBOT] Decriptacao manual falhou por ${reason} para mensagem ${msg.id?.id || "unknown"} (${context}): ${err.message}. Tentando fallback via msg._data.body.`
+        );
+      } else {
+        logger.warn(
+          `[WBOT] Decriptacao manual falhou (falha genuina de decriptacao/MAC/tipo) para mensagem ${msg.id?.id || "unknown"} (${context}): ${err}. Tentando fallback via msg._data.body.`
+        );
+      }
+    }
+  }
+
+  if (rawData?.body && rawData?.mimetype) {
+    logger.warn(
+      `[WBOT] Usando fallback _data.body (base64 bruto, API interna nao documentada da lib) para mensagem ${msg.id?.id || "unknown"} (${context}).`
+    );
+    return {
+      media: new MessageMedia(
+        rawData.mimetype,
+        rawData.body,
+        rawData.filename || null,
+        rawData.size || null
+      ),
+      degraded: true
+    };
+  }
+
+  logger.warn(
+    `[WBOT] downloadMedia sem fallback disponivel para mensagem ${msg.id?.id || "unknown"} (${context}). Mensagem sera persistida sem midia.`
+  );
+  return null;
+};
+
+const persistMediaMessageWithoutFile = async (
+  msg: WbotMessage,
+  ticket: Ticket,
+  contact: Contact,
+  quotedMsg: Message | null
+): Promise<Message> => {
+  const messageData = {
+    id: msg.id.id,
+    ticketId: ticket.id,
+    contactId: msg.fromMe ? undefined : contact.id,
+    body: msg.body
+      ? sanitizeMessageBody(msg.body)
+      : "[Mídia indisponível: falha ao baixar do WhatsApp]",
+    fromMe: msg.fromMe,
+    read: msg.fromMe,
+    quotedMsgId: quotedMsg?.id,
+    userId: ticket.userId
+  };
+
+  const existingMessage = await Message.findByPk(messageData.id);
+  if (existingMessage) {
+    const messageAge =
+      Date.now() - new Date(existingMessage.createdAt).getTime();
+    if (messageAge < 5000) {
+      return existingMessage;
+    }
+  }
+
+  try {
+    const newMessage = await CreateMessageService({ messageData });
+
+    const FormatLastMessage =
+      require("../../helpers/FormatLastMessage").default;
+    const formattedLastMessage = FormatLastMessage({
+      body: messageData.body,
+      messageType: msg.type,
+      fromMe: msg.fromMe
+    });
+
+    await ticket.update({ lastMessage: formattedLastMessage });
+    await ticket.reload();
+
+    return newMessage;
+  } catch (error) {
+    logger.error(`Erro ao salvar mensagem sem mídia (fallback): ${error}`);
+    return new Promise((resolve, reject) => {
+      setTimeout(async () => {
+        try {
+          const newMessage = await CreateMessageService({ messageData });
+
+          const FormatLastMessage =
+            require("../../helpers/FormatLastMessage").default;
+          const formattedLastMessage = FormatLastMessage({
+            body: messageData.body,
+            messageType: msg.type,
+            fromMe: msg.fromMe
+          });
+
+          await ticket.update({ lastMessage: formattedLastMessage });
+          await ticket.reload();
+
+          resolve(newMessage);
+        } catch (retryError) {
+          logger.error(
+            `Erro ao salvar mensagem sem mídia (fallback, retry): ${retryError}`
+          );
+          reject(retryError);
+        }
+      }, 1000);
+    });
+  }
+};
+
 const verifyMediaMessage = async (
   msg: WbotMessage,
   ticket: Ticket,
@@ -145,11 +329,16 @@ const verifyMediaMessage = async (
 ): Promise<Message> => {
   const quotedMsg = await verifyQuotedMessage(msg);
 
-  const media = await msg.downloadMedia();
+  const downloadResult = await downloadMediaWithFallback(
+    msg,
+    "verifyMediaMessage"
+  );
 
-  if (!media) {
-    throw new Error("ERR_WAPP_DOWNLOAD_MEDIA");
+  if (!downloadResult) {
+    return persistMediaMessageWithoutFile(msg, ticket, contact, quotedMsg);
   }
+
+  const { media } = downloadResult;
 
   if (!media.filename) {
     const ext = media.mimetype.split("/")[1].split(";")[0];
@@ -223,7 +412,8 @@ const verifyMediaMessage = async (
     quotedMsgId: quotedMsg?.id,
     albumId: albumId,
     userId: ticket.userId,
-    fileSize: fileSize
+    fileSize: fileSize,
+    isDegradedMedia: downloadResult.degraded
   };
 
   const existingMessage = await Message.findByPk(messageData.id);
@@ -388,6 +578,8 @@ const verifyMessage = async (
       }
     });
   }
+
+  pollBody = sanitizeMessageBody(pollBody);
 
   const messageData = {
     id: msg.id.id,
@@ -868,6 +1060,59 @@ const isValidMsg = (msg: WbotMessage): boolean => {
   return true;
 };
 
+type ChatLike = Pick<WbotChat, "isGroup" | "unreadCount"> &
+  Partial<Pick<WbotChat, "id" | "name">>;
+
+interface ChatWithFallbackResult {
+  chat: ChatLike;
+  degraded: boolean;
+}
+
+interface WbotMessageRawData {
+  notifyName?: string;
+  body?: string;
+  mimetype?: string;
+  filename?: string;
+  size?: number;
+  directPath?: string;
+  mediaKey?: string;
+  type?: string;
+}
+
+const getChatWithFallback = async (
+  msg: WbotMessage,
+  context: string
+): Promise<ChatWithFallbackResult> => {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const chat = await msg.getChat();
+      return { chat, degraded: false };
+    } catch (err) {
+      if (attempt === 3) {
+        logger.warn(
+          `[WBOT] getChat falhou apos 3 tentativas (${context}): ${err}. Degradando com dados derivados de msg, mensagem sera persistida mesmo assim.`
+        );
+        break;
+      }
+      await new Promise(r => setTimeout(r, 1500 * attempt));
+    }
+  }
+
+  const jid = msg.fromMe ? msg.to : msg.from;
+  const isGroup = jid?.endsWith("@g.us") ?? false;
+  const notifyName = (msg as unknown as { _data?: WbotMessageRawData })._data
+    ?.notifyName;
+
+  return {
+    chat: {
+      isGroup,
+      unreadCount: 0,
+      name: notifyName
+    },
+    degraded: true
+  };
+};
+
 const getSafeContact = async (
   wbot: Session,
   msg: WbotMessage,
@@ -926,8 +1171,9 @@ const handleMessage = async (
     }
   }
 
+  const { chat } = await getChatWithFallback(msg, "handleMessage");
+
   {
-    const chat = await msg.getChat();
     let groupContact;
     let baseContact: WbotContact;
 
@@ -984,7 +1230,6 @@ const handleMessage = async (
     where: { key: "CheckMsgIsGroup" }
   });
   if (Settingdb?.value === "enabled") {
-    const chat = await msg.getChat();
     if (
       msg.type === "sticker" ||
       msg.type === "e2e_notification" ||
@@ -1002,8 +1247,6 @@ const handleMessage = async (
     let groupContact: Contact | undefined;
     let userId;
     let queueId;
-
-    const chat = await msg.getChat();
 
     if (msg.fromMe) {
       if (/\u200e/.test(msg.body[0])) return;
@@ -1092,8 +1335,15 @@ const handleMessage = async (
 
           try {
             const { getIO } = require("../../libs/socket");
-            const io = getIO();
-            io.emit("contact", { action: "update", contact: groupContact });
+            const groupContactJson = groupContact.toJSON();
+            await emitMaskedToSockets({
+              io: getIO(),
+              event: "contact",
+              buildPayload: profile => ({
+                action: "update",
+                contact: serializeContact(groupContactJson, profile)
+              })
+            });
           } catch (socketErr) {
             logger.warn(`[WBOT_LISTENER] Erro ao emitir socket: ${socketErr}`);
           }
@@ -1574,9 +1824,18 @@ const handleMsgAck = async (msg: WbotMessage, ack: MessageAck) => {
     if (ackToUpdate > currentAck) {
       await messageToUpdate.update({ ack: ackToUpdate });
 
-      io.to(messageToUpdate.ticketId.toString()).emit("appMessage", {
-        action: "update",
-        message: messageToUpdate
+      const messageJson = messageToUpdate.toJSON() as unknown as Record<
+        string,
+        unknown
+      >;
+      await emitMaskedToSockets({
+        io,
+        rooms: [messageToUpdate.ticketId.toString()],
+        event: "appMessage",
+        buildPayload: profile => ({
+          action: "update",
+          message: withMaskedMessageContacts(messageJson, profile)
+        })
       });
     }
 
@@ -1616,9 +1875,12 @@ const handleMsgAck = async (msg: WbotMessage, ack: MessageAck) => {
 
 const handleMsgEdit = async (
   msg: WbotMessage,
-  newBody: string,
-  oldBody: string
+  rawNewBody: string,
+  rawOldBody: string
 ): Promise<void> => {
+  const newBody = sanitizeMessageBody(rawNewBody);
+  const oldBody = sanitizeMessageBody(rawOldBody);
+
   const editedMsg = await Message.findByPk(msg.id.id, {
     include: [
       {
@@ -1734,7 +1996,7 @@ const wbotMessageListener = async (wbot: Session): Promise<void> => {
   wbot.on("message_revoke_everyone", async (after, before) => {
     const msgBody: string | undefined = before?.body;
     if (msgBody !== undefined) {
-      verifyRevoked(msgBody || "");
+      verifyRevoked(sanitizeMessageBody(msgBody || ""));
     }
   });
 

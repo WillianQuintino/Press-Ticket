@@ -5,6 +5,7 @@ import EmailService from "../services/EmailService";
 import { Op } from "sequelize";
 import AppError from "../errors/AppError";
 import { SendRefreshToken } from "../helpers/SendRefreshToken";
+import { assertPasswordValid } from "../helpers/validatePassword";
 import User from "../models/User";
 import UserSession from "../models/UserSession";
 import { RefreshTokenService } from "../services/AuthServices/RefreshTokenService";
@@ -24,7 +25,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   const { token, serializedUser, refreshToken } = await AuthUserService({
     email,
-    password
+    password,
+    ip: clientIp
   });
 
   await createActivityLog({
@@ -223,10 +225,16 @@ export const resetPassword = async (
     throw new AppError("Token inválido ou expirado.", 400);
   }
 
-  user.password = newPassword;
-  user.passwordResetToken = null;
-  user.passwordResetExpires = null;
-  await user.save();
+  assertPasswordValid(newPassword);
+
+  const newTokenVersion = user.tokenVersion + 1;
+
+  await user.update({
+    password: newPassword,
+    passwordResetToken: null,
+    passwordResetExpires: null,
+    tokenVersion: newTokenVersion
+  });
 
   // LOG: Senha redefinida
   const clientIp = GetClientIp(req);
@@ -240,7 +248,8 @@ export const resetPassword = async (
       ip: clientIp,
       additionalData: {
         email: user.email,
-        action: "reset_password"
+        action: "reset_password",
+        tokenVersion: newTokenVersion
       }
     });
   } catch (error) {

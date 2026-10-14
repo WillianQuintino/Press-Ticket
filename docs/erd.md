@@ -25,6 +25,10 @@ erDiagram
         string  whatsappNumber
         string  currentSessionId
         date    lastLoginAt
+        int     loginAttempts
+        date    lockedUntil
+        int     lockCount
+        int     tokenVersion
     }
 
     CONTACT {
@@ -334,6 +338,17 @@ erDiagram
         string url
         string severity
         string component
+    }
+
+    %% ============================================================
+    %% WEBHOOK MODULE
+    %% ============================================================
+
+    WEBHOOKEVENTS {
+        int    id                PK
+        string eventId           UK
+        string source
+        date   processedAt
     }
 
     %% ============================================================

@@ -15,6 +15,7 @@ import {
   ActivityActions,
   EntityTypes
 } from "../services/ActivityLogService";
+import GetClientIp from "../helpers/GetClientIp";
 
 interface WhatsappData {
   name: string;
@@ -33,6 +34,10 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
+  if (req.user.profile !== "admin" && req.user.profile !== "masteradmin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
   const WhatsApps = await ListWhatsAppsService();
 
   if (WhatsApps.length >= Number(process.env.CONNECTIONS_LIMIT)) {
@@ -62,6 +67,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   StartWhatsAppSession(whatsapp);
 
   const logUserId = req.user?.id || 1;
+  const clientIp = GetClientIp(req);
 
   await createActivityLog({
     userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
@@ -69,6 +75,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     description: `Conexão WhatsApp ${whatsapp.name} criada`,
     entityType: EntityTypes.WHATSAPP,
     entityId: whatsapp.id,
+    ip: clientIp,
     additionalData: {
       name: whatsapp.name,
       isDefault: whatsapp.isDefault,
@@ -104,6 +111,10 @@ export const update = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  if (req.user.profile !== "admin" && req.user.profile !== "masteradmin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
   const { whatsappId } = req.params;
   const whatsappData = req.body;
 
@@ -113,6 +124,7 @@ export const update = async (
   });
 
   const logUserId = req.user?.id || 1;
+  const clientIp = GetClientIp(req);
 
   await createActivityLog({
     userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
@@ -120,6 +132,7 @@ export const update = async (
     description: `Conexão WhatsApp ${whatsapp.name} atualizada`,
     entityType: EntityTypes.WHATSAPP,
     entityId: whatsapp.id,
+    ip: clientIp,
     additionalData: whatsappData
   });
 
@@ -143,6 +156,10 @@ export const remove = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  if (req.user.profile !== "admin" && req.user.profile !== "masteradmin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
   const { whatsappId } = req.params;
 
   const whatsappToDelete = await ShowWhatsAppService(whatsappId);
@@ -151,6 +168,7 @@ export const remove = async (
   await removeWbot(+whatsappId);
 
   const logUserId = req.user?.id || 1;
+  const clientIp = GetClientIp(req);
 
   await createActivityLog({
     userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
@@ -158,6 +176,7 @@ export const remove = async (
     description: `Conexão WhatsApp ${whatsappToDelete.name} excluída`,
     entityType: EntityTypes.WHATSAPP,
     entityId: parseInt(whatsappId),
+    ip: clientIp,
     additionalData: {
       name: whatsappToDelete.name,
       status: whatsappToDelete.status
@@ -177,6 +196,10 @@ export const restart = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  if (req.user.profile !== "admin" && req.user.profile !== "masteradmin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
   const { whatsappId } = req.params;
 
   try {
@@ -201,6 +224,10 @@ export const shutdown = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  if (req.user.profile !== "admin" && req.user.profile !== "masteradmin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
   const { whatsappId } = req.params;
 
   try {
@@ -241,6 +268,10 @@ export const requestPairingCode = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  if (req.user.profile !== "admin" && req.user.profile !== "masteradmin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
   const { whatsappId } = req.params;
   const { phoneNumber } = req.body;
 

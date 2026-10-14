@@ -7,6 +7,7 @@ import Whatsapp from "../models/Whatsapp";
 import Queue from "../models/Queue";
 import Tag from "../models/Tag";
 import Message from "../models/Message";
+import { escapeLikeValue } from "../helpers/escapeLikeValue";
 
 export enum ActivityActions {
   LOGIN = "login",
@@ -35,7 +36,16 @@ export enum ActivityActions {
   REACT = "react",
   BLOCK = "block",
   UNBLOCK = "unblock",
-  SYSTEM = "system"
+  SYSTEM = "system",
+  LOGIN_FAILED = "login_failed",
+  ACCOUNT_LOCKED = "account_locked",
+  ACCOUNT_UNLOCKED = "account_unlocked",
+  PASSWORD_CHANGED = "password_changed",
+  ADMIN_PASSWORD_RESET = "admin_password_reset",
+  ACCOUNT_DEACTIVATED = "account_deactivated",
+  USER_REACTIVATED = "user_reactivated",
+  USER_PROFILE_CHANGED = "user_profile_changed",
+  BACKUP_DOWNLOADED = "backup_downloaded"
 }
 
 export enum EntityTypes {
@@ -57,7 +67,7 @@ export enum EntityTypes {
 }
 
 interface LogRequest {
-  userId: number;
+  userId: number | null;
   action: ActivityActions | string;
   description: string;
   entityType?: EntityTypes | string;
@@ -156,14 +166,15 @@ export const listActivityLogs = async ({
   }
 
   if (ip && ip !== "") {
-    where.ip = { [Op.like]: `%${ip}%` };
+    where.ip = { [Op.like]: `%${escapeLikeValue(ip)}%` };
   }
 
   if (searchParam && searchParam !== "") {
+    const sanitizedSearchParam = escapeLikeValue(searchParam);
     where[Op.or] = [
-      { description: { [Op.like]: `%${searchParam}%` } },
-      { action: { [Op.like]: `%${searchParam}%` } },
-      { ip: { [Op.like]: `%${searchParam}%` } }
+      { description: { [Op.like]: `%${sanitizedSearchParam}%` } },
+      { action: { [Op.like]: `%${sanitizedSearchParam}%` } },
+      { ip: { [Op.like]: `%${sanitizedSearchParam}%` } }
     ];
   }
 

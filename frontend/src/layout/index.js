@@ -14,19 +14,26 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import MenuIcon from '@mui/icons-material/Menu';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
-import { useContext, useEffect, useState } from "react";
+import WifiIcon from '@mui/icons-material/Wifi';
+import WifiOffIcon from '@mui/icons-material/WifiOff';
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
 import defaultLogo from '../assets/logo.jpg';
 import { getImageUrl } from '../helpers/imageHelper';
 import BackdropLoading from "../components/BackdropLoading";
+import InactivityWarningDialog from "../components/InactivityWarningDialog";
 import LanguageSelector from "../components/LanguageSelector";
 import NotificationsPopOver from "../components/NotificationsPopOver";
 import ThemeSelector from '../components/ThemeSelector';
 import UserModal from "../components/UserModal";
 import SessionExpiredModal from "../components/SessionExpiredModal";
 import { AuthContext } from "../context/Auth/AuthContext";
+import { useSocket } from "../context/SocketContext";
 import toastError from "../errors/toastError";
+import useInactivityTimeout from "../hooks/useInactivityTimeout";
+import useSettings from "../hooks/useSettings";
 import api from "../services/api";
 import openSocket from "../services/socket-io";
 import MainListItems from "./MainListItems";
@@ -124,10 +131,28 @@ const LoggedInLayout = ({ children, toggleTheme, onThemeConfigUpdate }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const { handleLogout, loading, sessionExpired, handleSessionExpiredConfirm } = useContext(AuthContext);
+  const { connected: socketConnected } = useSocket();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { user } = useContext(AuthContext);
   const themeStorage = localStorage.getItem("theme");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const { getSetting } = useSettings();
+  const inactivityLoggingOutRef = useRef(false);
+
+  const handleInactivityLogout = useCallback(async () => {
+    if (inactivityLoggingOutRef.current) return;
+    inactivityLoggingOutRef.current = true;
+    toast.info(t("inactivity.sessionExpiredToast"));
+    await handleLogout();
+  }, [handleLogout, t]);
+
+  const inactivityMinutes = parseInt(getSetting("inactivityTimeout") ?? "30", 10);
+
+  const { showWarning: inactivityWarningOpen, continueSession } = useInactivityTimeout({
+    timeoutMinutes: inactivityMinutes,
+    warningMinutes: 2,
+    onTimeout: handleInactivityLogout,
+  });
   const [companyData, setCompanyData] = useState({
     logo: defaultLogo,
     name: "Press Ticket®",
@@ -330,6 +355,12 @@ const LoggedInLayout = ({ children, toggleTheme, onThemeConfigUpdate }) => {
         open={sessionExpired}
         onConfirm={handleSessionExpiredConfirm}
       />
+      <InactivityWarningDialog
+        open={inactivityWarningOpen}
+        warningMinutes={2}
+        onContinue={continueSession}
+        onLogout={handleInactivityLogout}
+      />
       <StyledAppBar
         position="absolute"
         color={process.env.NODE_ENV === "development" ? "inherit" : "primary"}
@@ -356,6 +387,19 @@ const LoggedInLayout = ({ children, toggleTheme, onThemeConfigUpdate }) => {
           </Title>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Tooltip title={socketConnected ? t("socketStatus.connected") : t("socketStatus.disconnected")}>
+              <IconButton
+                color="inherit"
+                disableRipple
+                sx={{
+                  cursor: 'default',
+                  padding: 0.75,
+                  color: socketConnected ? 'inherit' : '#ffb4b4',
+                }}
+              >
+                {socketConnected ? <WifiIcon fontSize="small" /> : <WifiOffIcon fontSize="small" />}
+              </IconButton>
+            </Tooltip>
             <Tooltip title={isFullscreen ? t("mainDrawer.appBar.fullscreen.exit") : t("mainDrawer.appBar.fullscreen.enter")}>
               <IconButton
                 onClick={toggleFullscreen}

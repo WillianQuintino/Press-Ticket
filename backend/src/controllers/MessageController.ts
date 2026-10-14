@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
+import emitMaskedToSockets from "../helpers/emitMaskedToSockets";
 import GetClientIp from "../helpers/GetClientIp";
-import { validateId } from "../helpers/validateId";
 import GetTicketWbot from "../helpers/GetTicketWbot";
+import { withMaskedMessageContacts } from "../helpers/serializeContact";
 import SerializeWbotMsgId from "../helpers/SerializeWbotMsgId";
 import SetTicketMessagesAsRead from "../helpers/SetTicketMessagesAsRead";
+import { validateId } from "../helpers/validateId";
 import { getIO } from "../libs/socket";
 import Contact from "../models/Contact";
 import Message from "../models/Message";
@@ -592,9 +594,6 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   let messageId: string | undefined;
 
-  // "medias" é sempre um array ([] sem anexos) — array vazio é truthy,
-  // então checar só "if (medias)" desviava TODA mensagem de texto para o
-  // ramo de mídia (no-op) e respondia 200 {} sem nunca enviar.
   if (medias.length > 0) {
     const mediaMessages = await Promise.all(
       medias.map(async (media: Express.Multer.File) => {
@@ -608,7 +607,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
         return sentMessage;
       })
     );
-    if (mediaMessages && mediaMessages.length > 0) {
+    if (mediaMessages && mediaMessages.length > 0 && mediaMessages[0]) {
       messageId = mediaMessages[0].id.id;
     }
 
@@ -697,8 +696,6 @@ export const edit = async (req: Request, res: Response): Promise<Response> => {
       ip: clientIp,
       additionalData: {
         ticketId: message.ticketId,
-        oldBody: messageToEdit?.body?.substring(0, 100), // Primeiros 100 caracteres
-        newBody: body?.substring(0, 100),
         oldLength: messageToEdit?.body?.length || 0,
         newLength: body?.length || 0
       }
@@ -707,10 +704,15 @@ export const edit = async (req: Request, res: Response): Promise<Response> => {
     logger.error(`Erro ao criar log de edição de mensagem: ${error}`);
   }
 
-  const io = getIO();
-  io.to(message.ticketId.toString()).emit("appMessage", {
-    action: "update",
-    message
+  const messageJson = message.toJSON() as unknown as Record<string, unknown>;
+  await emitMaskedToSockets({
+    io: getIO(),
+    rooms: [message.ticketId.toString()],
+    event: "appMessage",
+    buildPayload: profile => ({
+      action: "update",
+      message: withMaskedMessageContacts(messageJson, profile)
+    })
   });
 
   return res.send();
@@ -740,7 +742,7 @@ export const remove = async (
       ip: clientIp,
       additionalData: {
         ticketId: message.ticketId,
-        messageBody: messageToDelete?.body?.substring(0, 50), // Primeiros 50 caracteres
+        messageLength: messageToDelete?.body?.length || 0,
         mediaType: messageToDelete?.mediaType,
         fromMe: messageToDelete?.fromMe
       }
@@ -749,10 +751,15 @@ export const remove = async (
     logger.error(`Erro ao criar log de exclusão de mensagem: ${error}`);
   }
 
-  const io = getIO();
-  io.to(message.ticketId.toString()).emit("appMessage", {
-    action: "delete",
-    message
+  const messageJson = message.toJSON() as unknown as Record<string, unknown>;
+  await emitMaskedToSockets({
+    io: getIO(),
+    rooms: [message.ticketId.toString()],
+    event: "appMessage",
+    buildPayload: profile => ({
+      action: "delete",
+      message: withMaskedMessageContacts(messageJson, profile)
+    })
   });
 
   return res.send();

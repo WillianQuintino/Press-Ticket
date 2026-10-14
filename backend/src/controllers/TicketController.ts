@@ -4,6 +4,8 @@ import formatBody from "../helpers/Mustache";
 import { getIO } from "../libs/socket";
 import Contact from "../models/Contact";
 import Ticket from "../models/Ticket";
+import { withSerializedContact } from "../helpers/serializeContact";
+import emitMaskedToSockets from "../helpers/emitMaskedToSockets";
 import CheckOpenTicketsService from "../services/TicketServices/CheckOpenTicketsService";
 import CloseTicketsService from "../services/TicketServices/CloseTicketsService";
 import CreateTicketService from "../services/TicketServices/CreateTicketService";
@@ -56,14 +58,17 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 
     let userId = "0";
     let isAdmin = false;
+    let contactProfile = "admin";
 
     const isApiRequest = req.path.startsWith("/v1/");
     if (isApiRequest || "apiToken" in req) {
       isAdmin = true;
+      contactProfile = "admin";
     } else if (req.user) {
       userId = req.user.id.toString();
       isAdmin =
         req.user.profile === "admin" || req.user.profile === "masteradmin";
+      contactProfile = req.user.profile;
     } else {
       return res.status(401).json({ error: "Não autorizado" });
     }
@@ -131,7 +136,16 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
         isGroup
       });
 
-      return res.status(200).json({ tickets, count, hasMore });
+      const serializedTickets = tickets.map(ticket =>
+        withSerializedContact(
+          ticket.toJSON() as unknown as Record<string, unknown>,
+          contactProfile
+        )
+      );
+
+      return res
+        .status(200)
+        .json({ tickets: serializedTickets, count, hasMore });
     } catch (serviceError) {
       logger.error(`Erro no serviço de listagem de tickets: ${serviceError}`);
       return res
@@ -158,6 +172,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   const logUserId = req.user?.id || 1;
   const contact = await Contact.findByPk(contactId);
+  const clientIp = GetClientIp(req);
 
   await createActivityLog({
     userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
@@ -165,27 +180,40 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     description: `Ticket #${ticket.id} criado para o contato ${contact?.name || contactId}`,
     entityType: EntityTypes.TICKET,
     entityId: ticket.id,
+    ip: clientIp,
     additionalData: { status, queueId, whatsappId }
   });
 
-  const io = getIO();
-  io.to(ticket.status)
-    .to("notification")
-    .to(ticket.id.toString())
-    .emit("ticket", {
-      action: "update",
-      ticket
-    });
+  const ticketJson = ticket.toJSON() as unknown as Record<string, unknown>;
 
-  return res.status(200).json(ticket);
+  await emitMaskedToSockets({
+    io: getIO(),
+    rooms: [ticket.status, "notification", ticket.id.toString()],
+    event: "ticket",
+    buildPayload: profile => ({
+      action: "update",
+      ticket: withSerializedContact(ticketJson, profile)
+    })
+  });
+
+  return res
+    .status(200)
+    .json(withSerializedContact(ticketJson, req.user.profile));
 };
 
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { ticketId } = req.params;
 
-  const contact = await ShowTicketService(ticketId);
+  const ticket = await ShowTicketService(ticketId);
 
-  return res.status(200).json(contact);
+  return res
+    .status(200)
+    .json(
+      withSerializedContact(
+        ticket.toJSON() as unknown as Record<string, unknown>,
+        req.user.profile
+      )
+    );
 };
 
 export const update = async (
@@ -391,7 +419,14 @@ export const update = async (
     }
   }
 
-  return res.status(200).json(ticket);
+  return res
+    .status(200)
+    .json(
+      withSerializedContact(
+        ticket.toJSON() as unknown as Record<string, unknown>,
+        req.user.profile
+      )
+    );
 };
 
 export const remove = async (
@@ -730,19 +765,22 @@ export const toggleState = async (
       ]
     });
 
-    const io = getIO();
-    io.to(ticket.status)
-      .to("notification")
-      .to(ticketId.toString())
-      .emit("ticket", {
+    const ticketJson = ticket.toJSON() as unknown as Record<string, unknown>;
+
+    await emitMaskedToSockets({
+      io: getIO(),
+      rooms: [ticket.status, "notification", ticketId.toString()],
+      event: "ticket",
+      buildPayload: profile => ({
         action: "update",
-        ticket
-      });
+        ticket: withSerializedContact(ticketJson, profile)
+      })
+    });
 
     return res.status(200).json({
       field,
       value: newValue,
-      ticket
+      ticket: withSerializedContact(ticketJson, req.user.profile)
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Erro interno";

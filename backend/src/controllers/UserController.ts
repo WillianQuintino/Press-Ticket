@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
 import { getIO } from "../libs/socket";
 
 import AppError from "../errors/AppError";
@@ -9,12 +10,14 @@ import DeleteUserService from "../services/UserServices/DeleteUserService";
 import ListUsersService from "../services/UserServices/ListUsersService";
 import ShowUserService from "../services/UserServices/ShowUserService";
 import UpdateUserService from "../services/UserServices/UpdateUserService";
+import User from "../models/User";
 import {
   createActivityLog,
   ActivityActions,
   EntityTypes
 } from "../services/ActivityLogService";
 import GetClientIp from "../helpers/GetClientIp";
+import { SendRefreshToken } from "../helpers/SendRefreshToken";
 
 type IndexQuery = {
   searchParam: string;
@@ -139,29 +142,127 @@ export const update = async (
     delete userData.isTricked;
   }
 
-  const user = await UpdateUserService({ userData, userId });
+  const isSelf = sessionUserId === newUserId;
+  const isPasswordChange =
+    typeof userData.password === "string" && userData.password.length > 0;
+
+  let isDeactivation = false;
+  let isReactivation = false;
+  if (userData.active === false) {
+    const userBeforeUpdate = await User.findByPk(userId, {
+      attributes: ["active"]
+    });
+    isDeactivation = userBeforeUpdate?.active !== false;
+  } else if (userData.active === true) {
+    const userBeforeUpdate = await User.findByPk(userId, {
+      attributes: ["active"]
+    });
+    isReactivation = userBeforeUpdate?.active === false;
+  }
+
+  let isProfileChange = false;
+  let previousProfile: string | undefined;
+  if (userData.profile !== undefined) {
+    const userBeforeUpdate = await User.findByPk(userId, {
+      attributes: ["profile"]
+    });
+    previousProfile = userBeforeUpdate?.profile;
+    isProfileChange =
+      userBeforeUpdate !== null && userBeforeUpdate.profile !== userData.profile;
+  }
+
+  const result = await UpdateUserService({
+    userData,
+    userId,
+    requestUserId: req.user.id
+  });
   const logUserId = req.user?.id || 1;
   const clientIp = GetClientIp(req);
 
-  if (user) {
-    await createActivityLog({
-      userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
-      action: ActivityActions.UPDATE,
-      description: `Usuário ${user.name} (${user.email}) atualizado`,
-      entityType: EntityTypes.USER,
-      entityId: user.id,
-      ip: clientIp,
-      additionalData: userData
-    });
+  if (result) {
+    if (isPasswordChange && isSelf) {
+      await createActivityLog({
+        userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
+        action: ActivityActions.PASSWORD_CHANGED,
+        description: `Usuário ${result.name} (${result.email}) alterou a própria senha`,
+        entityType: EntityTypes.USER,
+        entityId: result.id,
+        ip: clientIp
+      });
+    } else if (isPasswordChange) {
+      await createActivityLog({
+        userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
+        action: ActivityActions.ADMIN_PASSWORD_RESET,
+        description: `Admin redefiniu a senha do usuário ${result.name} (${result.email})`,
+        entityType: EntityTypes.USER,
+        entityId: result.id,
+        ip: clientIp
+      });
+    } else if (isDeactivation) {
+      await createActivityLog({
+        userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
+        action: ActivityActions.ACCOUNT_DEACTIVATED,
+        description: `Admin desativou a conta do usuário ${result.name} (${result.email})`,
+        entityType: EntityTypes.USER,
+        entityId: result.id,
+        ip: clientIp
+      });
+    } else if (isReactivation) {
+      await createActivityLog({
+        userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
+        action: ActivityActions.USER_REACTIVATED,
+        description: `Admin reativou a conta do usuário ${result.name} (${result.email})`,
+        entityType: EntityTypes.USER,
+        entityId: result.id,
+        ip: clientIp
+      });
+    } else if (isProfileChange) {
+      await createActivityLog({
+        userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
+        action: ActivityActions.USER_PROFILE_CHANGED,
+        description: `Admin alterou o perfil do usuário ${result.name} (${result.email}) de "${previousProfile}" para "${userData.profile}". Sessões invalidadas.`,
+        entityType: EntityTypes.USER,
+        entityId: result.id,
+        ip: clientIp
+      });
+    } else {
+      await createActivityLog({
+        userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
+        action: ActivityActions.UPDATE,
+        description: `Usuário ${result.name} (${result.email}) atualizado`,
+        entityType: EntityTypes.USER,
+        entityId: result.id,
+        ip: clientIp,
+        additionalData: {
+          name: userData.name,
+          profile: userData.profile,
+          email: userData.email,
+          active: userData.active,
+          queueIds: userData.queueIds,
+          whatsappIds: userData.whatsappIds
+        }
+      });
+    }
+  }
+
+  if (!result) {
+    return res.status(200).json(result);
+  }
+
+  const { refreshToken, ...responseBody } = result;
+  const { token: _token, ...broadcastUser } = responseBody;
+
+  if (refreshToken) {
+    SendRefreshToken(res, refreshToken);
   }
 
   const io = getIO();
   io.emit("user", {
     action: "update",
-    user
+    user: broadcastUser
   });
 
-  return res.status(200).json(user);
+  return res.status(200).json(responseBody);
 };
 
 export const remove = async (
@@ -204,4 +305,61 @@ export const remove = async (
   });
 
   return res.status(200).json({ message: "User deleted" });
+};
+
+export const listLocked = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  if (req.user.profile !== "admin" && req.user.profile !== "masteradmin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
+  const users = await User.findAll({
+    where: { lockedUntil: { [Op.gt]: new Date() } },
+    attributes: [
+      "id",
+      "name",
+      "email",
+      "lockedUntil",
+      "lockCount",
+      "loginAttempts"
+    ],
+    order: [["lockedUntil", "DESC"]]
+  });
+
+  return res.status(200).json(users);
+};
+
+export const unlockUser = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  if (req.user.profile !== "admin" && req.user.profile !== "masteradmin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
+  const { userId } = req.params;
+
+  const user = await User.findByPk(userId);
+
+  if (!user) {
+    throw new AppError("ERR_NO_USER_FOUND", 404);
+  }
+
+  await user.update({ loginAttempts: 0, lockedUntil: null, lockCount: 0 });
+
+  const clientIp = GetClientIp(req);
+  const logUserId = req.user?.id || 1;
+
+  await createActivityLog({
+    userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
+    action: ActivityActions.ACCOUNT_UNLOCKED,
+    description: `Conta de ${user.name} (${user.email}) desbloqueada manualmente por administrador`,
+    entityType: EntityTypes.USER,
+    entityId: user.id,
+    ip: clientIp
+  });
+
+  return res.status(200).json({ message: "Conta desbloqueada com sucesso." });
 };
