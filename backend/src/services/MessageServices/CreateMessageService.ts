@@ -5,6 +5,11 @@ import Ticket from "../../models/Ticket";
 import Whatsapp from "../../models/Whatsapp";
 import FormatLastMessage from "../../helpers/FormatLastMessage";
 import { logger } from "../../utils/logger";
+import {
+  withSerializedContact,
+  withMaskedMessageContacts
+} from "../../helpers/serializeContact";
+import emitMaskedToSockets from "../../helpers/emitMaskedToSockets";
 
 interface MessageData {
   id: string;
@@ -18,6 +23,7 @@ interface MessageData {
   mimetype?: string;
   messageType?: string;
   filename?: string;
+  isDegradedMedia?: boolean;
 }
 interface Request {
   messageData: MessageData;
@@ -106,15 +112,29 @@ const CreateMessageService = async ({
     ticketPayload.lastMessage = composedLastMessage;
     ticketPayload.updatedAt = new Date();
 
-    io.to(message.ticketId.toString())
-      .to(ticketPayload.status as string)
-      .to("notification")
-      .emit("appMessage", {
-        action: "create",
-        message,
-        ticket: ticketPayload,
-        contact: ticketPayload.contact
-      });
+    const messageJson = message.toJSON() as unknown as Record<string, unknown>;
+
+    await emitMaskedToSockets({
+      io,
+      rooms: [
+        message.ticketId.toString(),
+        ticketPayload.status as string,
+        "notification"
+      ],
+      event: "appMessage",
+      buildPayload: profile => {
+        const maskedTicketPayload = withSerializedContact(
+          ticketPayload,
+          profile
+        );
+        return {
+          action: "create",
+          message: withMaskedMessageContacts(messageJson, profile),
+          ticket: maskedTicketPayload,
+          contact: maskedTicketPayload.contact
+        };
+      }
+    });
 
     return message;
   } catch (error) {

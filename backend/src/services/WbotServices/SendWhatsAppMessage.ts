@@ -70,7 +70,7 @@ const SendWhatsAppMessage = async ({
   ticket,
   quotedMsg,
   mentions
-}: Request): Promise<WbotMessage> => {
+}: Request): Promise<WbotMessage | undefined> => {
   const wbot = await GetTicketWbot(ticket);
 
   // Garante que a sessão está realmente conectada antes de enviar.
@@ -364,8 +364,12 @@ const SendWhatsAppMessage = async ({
     await ticket.update({ lastMessage: body });
     await ticket.reload();
 
+    if (!sentMessage?.id?.id) {
+      return undefined;
+    }
+
     const messageData = {
-      id: sentMessage!.id.id,
+      id: sentMessage.id.id,
       ticketId: ticket.id,
       contactId: undefined,
       body: body,
@@ -385,7 +389,7 @@ const SendWhatsAppMessage = async ({
       logger.error(`Erro ao salvar mensagem: ${err}`);
     }
 
-    return sentMessage!;
+    return sentMessage;
   } catch (err) {
     logger.error(`Erro ao enviar mensagem: ${err}`);
     throw new AppError("ERR_SENDING_WAPP_MSG");

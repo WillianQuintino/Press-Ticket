@@ -513,10 +513,13 @@ const Contacts = () => {
   };
 
   const handleimportContact = async () => {
+    setLoading(true);
     try {
       await api.post("/contacts/import");
+      toast.success(t("contacts.toasts.importSuccess"));
       navigate(0);
     } catch (err) {
+      setLoading(false);
       toastError(err, t);
     }
   };
@@ -901,7 +904,7 @@ const Contacts = () => {
                             </Tooltip>
                           </IconButton>
                           <span>
-                            {user?.isTricked === "enabled" ? formatPhoneNumber(contact.number) : formatPhoneNumber(contact.number).slice(0, -4) + "****"}
+                            {formatPhoneNumber(contact.number).slice(0, -4) + "****"}
                           </span>
                         </Box>
                       ) : (
@@ -1074,10 +1077,8 @@ const Contacts = () => {
               <Box>
                 <Typography variant="subtitle2" color="primary">{t('contactModal.form.number', { defaultValue: 'Número do WhatsApp' })}</Typography>
                 <Typography variant="body2">
-                  {selectedDataContact?.number 
-                    ? (user?.isTricked === "enabled" 
-                        ? formatPhoneNumber(selectedDataContact.number) 
-                        : formatPhoneNumber(selectedDataContact.number).slice(0, -4) + "****")
+                  {selectedDataContact?.number
+                    ? formatPhoneNumber(selectedDataContact.number).slice(0, -4) + "****"
                     : "—"}
                 </Typography>
               </Box>

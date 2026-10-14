@@ -346,7 +346,8 @@ const messages = {
           exportSuccess: "Contatos exportados com sucesso!",
           noContactsToExport: "Não há contatos para exportar.",
           blocked: "Contato bloqueado no WhatsApp",
-          unblocked: "Contato desbloqueado no WhatsApp"
+          unblocked: "Contato desbloqueado no WhatsApp",
+          importSuccess: "Contatos sincronizados com sucesso!"
         },
         errors: {
           ticketAlreadyOpen: "Já existe um ticket aberto para este contato, atribuído ao Atendente: *{{userName}}* no Canal: *{{userChannel}}* criado em: *{{ticketCreatedAt}}*.",
@@ -479,6 +480,9 @@ const messages = {
         messages: {
           addOk: "Participantes adicionados (ou convite enviado).",
           addErr: "Erro ao adicionar participantes.",
+          addPartialSuccess: "{{success}} adicionado(s), {{invited}} convite(s) enviado(s), {{failed}} falha(s)",
+          addInviteOnly: "{{invited}} convite(s) enviado(s) por link privado",
+          addFailCode: "código {{code}}",
           removeOk: "Participantes removidos.",
           removeErr: "Erro ao remover participantes.",
           promoteOk: "Participantes promovidos a admin.",
@@ -527,6 +531,13 @@ const messages = {
       copyToClipboard: {
         copy: "Copiar",
         copied: "Copiado"
+      },
+      socketStatus: {
+        connected: "Conectado",
+        disconnected: "Desconectado",
+        disconnectedMessage: "Conexão em tempo real perdida. Tentando reconectar...",
+        reconnectedMessage: "Conexão em tempo real restabelecida.",
+        serverErrorMessage: "Erro recebido do servidor em tempo real."
       },
       cpuUsage: {
         title: "Uso de CPU",
@@ -835,6 +846,8 @@ const messages = {
           submit: "Fazer login",
           register: "Não tem uma conta? Cadastre-se!",
         },
+        accountLocked: "Conta bloqueada temporariamente",
+        tooManyRequests: "Muitas tentativas de login",
       },
       mainDrawer: {
         listItems: {
@@ -1087,7 +1100,9 @@ const messages = {
           deleted: "Mensagem apagada",
           edited: "Editada",
           today: "Hoje",
-          yesterday: "Ontem"
+          yesterday: "Ontem",
+          degradedMedia: "Prévia",
+          degradedMediaTooltip: "Esta mídia não pôde ser baixada em qualidade original. Exibindo uma prévia de baixa resolução."
         }
       },
       messagesInput: {
@@ -1186,7 +1201,8 @@ const messages = {
           copyLinkSuccess: "Link copiado com sucesso!",
           copyLinkError: "Erro ao copiar link. Tente novamente.",
           cropSuccess: "Imagem recortada com sucesso!",
-          cropError: "Erro ao recortar imagem. Tente novamente."
+          cropError: "Erro ao recortar imagem. Tente novamente.",
+          invalidCropArea: "Selecione uma área válida para recorte"
         }
       },
       newTicketModal: {
@@ -1363,6 +1379,12 @@ const messages = {
           passwordMismatch: "As senhas não coincidem.",
           generic: "Erro ao redefinir senha. Tente novamente."
         }
+      },
+      passwordStrength: {
+        weak: "Senha fraca",
+        medium: "Senha média",
+        strong: "Senha forte",
+        requirements: "A senha deve ter ao menos 8 caracteres, uma maiúscula, uma minúscula, um número e um caractere especial.",
       },
       settings: {
         title: "Configurações",
@@ -1555,6 +1577,17 @@ const messages = {
               "168": "7 dias",
             },
           },
+          inactivityTimeout: {
+            name: "Timeout de inatividade:",
+            note: "Tempo sem interação do atendente antes do logout automático por inatividade",
+            options: {
+              "0": "Desativado",
+              "15": "15 minutos",
+              "30": "30 minutos (padrão)",
+              "60": "1 hora",
+              "120": "2 horas",
+            },
+          },
           notifyQueueUsersMessage: {
             title: "Notificação WhatsApp para Atendentes",
             name: "Mensagem de Notificação de Novo Ticket",
@@ -1568,13 +1601,20 @@ const messages = {
             company: "Dados da empresa salvos com sucesso!",
             logos: "Logos salvos com sucesso!",
             colors: "Cores salvos com sucesso!",
+            logoRemoved: "Logo removida com sucesso!",
+            colorsTheme: "Cores do tema {{theme}} salvas com sucesso!",
           },
           error: {
             invalid: "Erro ao buscar personalizações.",
             company: "Erro ao salvar dados da empresa.",
             logos: "Erro ao salvar a logo.",
+            logoRemove: "Erro ao remover logo. Tente novamente.",
             logs: "Erro ao salvar a persoanalização:",
             colors: "Erro ao salvar cores do tema: "
+          },
+          info: {
+            uploadingLogo: "Enviando imagem...",
+            deletingLogo: "Removendo logo...",
           },
           tabs: {
             company: "Empresa",
@@ -1602,9 +1642,16 @@ const messages = {
         }
       },
       sessionExpiredModal: {
-        title: "Sessão Encerrada por Inatividade",
-        message: "Sua sessão foi encerrada automaticamente por exceder o tempo de inatividade configurado. Clique em confirmar para ser redirecionado à tela de login.",
+        title: "Sessão Encerrada",
+        message: "Sua sessão foi encerrada. Clique em confirmar para ser redirecionado à tela de login.",
         confirm: "Confirmar",
+      },
+      inactivity: {
+        warningTitle: "Sessão prestes a expirar",
+        warningMessage: "Você ficará desconectado em {{time}} por inatividade. Deseja continuar conectado?",
+        continueSession: "Continuar conectado",
+        logoutNow: "Sair agora",
+        sessionExpiredToast: "Sessão encerrada por inatividade.",
       },
       signup: {
         title: "Cadastre-se",
@@ -1918,6 +1965,20 @@ const messages = {
           delete: "Excluir",
         }
       },
+      lockedUsers: {
+        title: "Contas Bloqueadas",
+        empty: "Nenhuma conta bloqueada no momento.",
+        columns: {
+          name: "Nome",
+          email: "E-mail",
+          lockedUntil: "Bloqueada até",
+          lockCount: "Nº de bloqueios",
+          actions: "Ações"
+        },
+        unlock: "Desbloquear",
+        unlockSuccess: "Conta desbloqueada com sucesso.",
+        unlockError: "Erro ao desbloquear conta. Tente novamente."
+      },
       userModal: {
         title: {
           add: "Adicionar atendente",
@@ -1931,6 +1992,8 @@ const messages = {
           password: "Senha",
           passwordPlaceholder: "Digite a senha do atendente",
           toggleVisibility: "Mostrar/ocultar senha",
+          currentPassword: "Senha atual",
+          currentPasswordPlaceholder: "Digite sua senha atual para confirmar",
           profile: "Perfil",
           admin: "Administrador",
           user: "Atendente",
@@ -1948,6 +2011,7 @@ const messages = {
           cancel: "Cancelar",
         },
         success: "Atendente salvo com sucesso.",
+        passwordChanged: "Senha alterada com sucesso.",
       },
       notificameHubModal: {
         title: "Ativar Canais NotificameHub",
@@ -2380,6 +2444,14 @@ const messages = {
         whatsappLibUpdateAvailable: "Atualização da Biblioteca Disponível",
         whatsappLibUpdateMessage: "Uma nova versão da biblioteca WhatsApp Web JS está disponível."
       },
+      errors: {
+        unauthorized: "Sua sessão expirou. Faça login novamente.",
+        forbidden: "Você não tem permissão para realizar esta ação.",
+        notFound: "Recurso não encontrado.",
+        conflict: "Já existe um registro com estes dados.",
+        serverError: "Erro interno do servidor. Tente novamente mais tarde.",
+        networkError: "Sem conexão com o servidor. Verifique sua internet e tente novamente."
+      },
       backendErrors: {
         ERR_CREATING_MESSAGE: "Erro ao criar mensagem no banco de dados.",
         ERR_CREATING_TICKET: "Erro ao criar ticket no banco de dados.",
@@ -2389,6 +2461,13 @@ const messages = {
         ERR_EDITING_WAPP_MSG: "Não foi possível editar a mensagem do WhatsApp.",
         ERR_FETCH_WAPP_MSG: "Erro ao buscar a mensagem no WhatsApp, talvez ela seja muito antiga.",
         ERR_INVALID_CREDENTIALS: "Erro de autenticação. Por favor, tente novamente.",
+        ERR_INVALID_PASSWORD: "Senha atual incorreta.",
+        ERR_PASSWORD_REQUIRED: "Informe uma senha.",
+        ERR_PASSWORD_MIN_LENGTH: "A senha deve ter ao menos 8 caracteres.",
+        ERR_PASSWORD_UPPERCASE: "A senha deve conter ao menos uma letra maiúscula.",
+        ERR_PASSWORD_LOWERCASE: "A senha deve conter ao menos uma letra minúscula.",
+        ERR_PASSWORD_NUMBER: "A senha deve conter ao menos um número.",
+        ERR_PASSWORD_SPECIAL: "A senha deve conter ao menos um caractere especial (!@#$%^&*...).",
         ERR_NO_CONTACT_FOUND: "Nenhum contato encontrado com este ID.",
         ERR_NO_DEF_WAPP_FOUND: "Nenhum WhatsApp padrão encontrado. Verifique a página de canais.",
         ERR_NO_INTEGRATION_FOUND: "Integração não encontrada.",

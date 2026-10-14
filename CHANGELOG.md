@@ -11,6 +11,47 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [v1.16.5] - 2026-08-26
+
+### 🐛 Corrigido
+
+- [fix: descriptografar valores enc:v1 no ListIntegrationsService e ListSettingsService antes de retornar ao frontend; corrigir URL do NotificameTokenValidator](https://github.com/rtenorioh/Press-Ticket/commit/a7ede29)
+- [fix: fallback gracioso quando msg.getChat() falha, evitando abandono silencioso de mensagens](https://github.com/rtenorioh/Press-Ticket/commit/0292a40)
+- [fix: corrige truthiness de array que impedia envio de mensagens de texto sem anexo](https://github.com/rtenorioh/Press-Ticket/commit/eb1598a)
+- [fix: guarda contra retorno sem id.id ao enviar mídia para contatos @lid](https://github.com/rtenorioh/Press-Ticket/commit/12819ee)
+- [fix: corrige tipagem de retorno em ListSettingsService](https://github.com/rtenorioh/Press-Ticket/commit/7c71315)
+- [fix(wbot): recuperar mídia original via decriptação manual quando downloadMedia falha](https://github.com/rtenorioh/Press-Ticket/commit/2e9a077)
+
+### ♻️ Refatorado
+
+- [refactor: reorganiza imports e remove duplicatas](https://github.com/rtenorioh/Press-Ticket/commit/5963a04)
+
+## [v1.16.4] - 2026-07-25
+
+### 🔒 Segurança
+
+- [fix(security): XSS residual WhatsApp + geração automática de HUB_WEBHOOK_SECRET](https://github.com/rtenorioh/Press-Ticket/commit/c0b380d3d72d724267f1c33ef7ae5502e5945c24)
+- [feat(security): proteção contra brute force no login](https://github.com/rtenorioh/Press-Ticket/commit/40ef6824c64091d3529f431fe198f888485b9caf)
+- [feat(security): invalidação imediata de sessão via tokenVersion](https://github.com/rtenorioh/Press-Ticket/commit/0874438a508f1e6ad19d94c941cba944fd8c4ec1)
+- [fix(security): bcrypt salt rounds 8→10 nos seeds de usuário padrão](https://github.com/rtenorioh/Press-Ticket/commit/5750e41259bd1182b48af03d5bd933253a7112ac)
+- [feat(security): timeout de inatividade com aviso e logout automático](https://github.com/rtenorioh/Press-Ticket/commit/d215f5effad51ae608bb94fd610a6cc74ea33aa3)
+- [feat(security): política de senha fixa com indicador de força no frontend](https://github.com/rtenorioh/Press-Ticket/commit/dc4f97868d767e897cb6b4f0275a89a8a2fed146)
+- [fix(security): auditoria e completude do ActivityLog](https://github.com/rtenorioh/Press-Ticket/commit/eedc141cd545fcf5bbcfa362710408c58347c594)
+- [feat(security): proteção contra replay attack nos webhooks NotificameHub](https://github.com/rtenorioh/Press-Ticket/commit/902f7b3fae53b3cdc007186195606be007d1b8f3)
+- [fix(security): downgrade dotenv 17.4.2 → 16.4.7 (supply chain)](https://github.com/rtenorioh/Press-Ticket/commit/4cd8ee8953bf616268cbe9f6456dd4a68f8e6653)
+- [feat(security): número de telefone mascarado em listagens](https://github.com/rtenorioh/Press-Ticket/commit/b74fd089fe72a53908259880a3a17e895e25b25d)
+- [feat(security): controle de acesso no backend — contatos e canais](https://github.com/rtenorioh/Press-Ticket/commit/d59edeeb22b0cadd6b60fd2109355fdfd5204f1d)
+- [fix(security): edição de número restrita a admin + rota /channels protegida](https://github.com/rtenorioh/Press-Ticket/commit/e841fdb07df9f792709db741d859d41c85224bf0)
+- [fix(security): mascarar contact.number em GET /tickets](https://github.com/rtenorioh/Press-Ticket/commit/66387b98d93a49e89d6c4dc393243e1240a3fcb2)
+- [feat(security): mascaramento de contact.number em todos os emits Socket.io](https://github.com/rtenorioh/Press-Ticket/commit/5245a42551f821ecbc93c46997c01c3355d60d7b)
+- [fix(security): mudança de perfil invalida sessão via tokenVersion](https://github.com/rtenorioh/Press-Ticket/commit/32d05ebb40b780fd846ab9e30fa8eff78bc797a6)
+
+### 🔧 Manutenção
+
+- [feat(scripts): adiciona script de endurecimento de segurança da VPS](https://github.com/rtenorioh/Press-Ticket/commit/867e2a414829312cc527ba43023b08f54b71ecf9)
+
+---
+
 ## [v1.16.3] - 2026-05-22
 
 ### 🔒 Segurança

@@ -11,6 +11,7 @@ interface TokenPayload {
   id: string;
   username: string;
   profile: string;
+  tokenVersion: number;
   iat: number;
   exp: number;
 }
@@ -30,7 +31,7 @@ const isAuth = async (
 
   try {
     const decoded = verify(token, authConfig.secret);
-    const { id, profile } = decoded as TokenPayload;
+    const { id, tokenVersion } = decoded as TokenPayload;
 
     const session = await UserSession.findOne({
       where: {
@@ -42,6 +43,23 @@ const isAuth = async (
     if (!session) {
       throw new AppError("ERR_SESSION_EXPIRED", 401);
     }
+
+    // Perfil e status de ativação são sempre lidos do banco (não do payload do
+    // JWT), para que uma alteração de permissão feita após o login tenha
+    // efeito imediato em vez de esperar a expiração do token de acesso.
+    const currentUser = await User.findByPk(id, {
+      attributes: ["id", "profile", "active", "tokenVersion"]
+    });
+
+    if (!currentUser || !currentUser.active) {
+      throw new AppError("ERR_SESSION_EXPIRED", 401);
+    }
+
+    if (currentUser.tokenVersion !== tokenVersion) {
+      throw new AppError("ERR_SESSION_EXPIRED", 401);
+    }
+
+    const { profile } = currentUser;
 
     const lastActivity = new Date(session.lastActivity).getTime();
     const currentTime = new Date().getTime();
@@ -86,6 +104,9 @@ const isAuth = async (
 
     return next();
   } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
     if (err instanceof TokenExpiredError) {
       throw new AppError("ERR_SESSION_EXPIRED", 401);
     }

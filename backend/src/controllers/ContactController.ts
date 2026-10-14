@@ -5,6 +5,7 @@ import { getIO } from "../libs/socket";
 import CreateContactService from "../services/ContactServices/CreateContactService";
 import DeleteAllContactService from "../services/ContactServices/DeleteAllContactService";
 import DeleteContactService from "../services/ContactServices/DeleteContactService";
+import ExportContactDataService from "../services/ContactServices/ExportContactDataService";
 import ExportContactsService from "../services/ContactServices/ExportContactsService";
 import GetAboutService from "../services/ContactServices/GetAboutService";
 import GetCommonGroupsService from "../services/ContactServices/GetCommonGroupsService";
@@ -16,6 +17,8 @@ import UpdateGroupProfilePicService from "../services/ContactServices/UpdateGrou
 
 import AppError from "../errors/AppError";
 import GetClientIp from "../helpers/GetClientIp";
+import { serializeContact, serializeContacts } from "../helpers/serializeContact";
+import emitMaskedToSockets from "../helpers/emitMaskedToSockets";
 import { getWbot } from "../libs/wbot";
 import Whatsapp from "../models/Whatsapp";
 import {
@@ -38,6 +41,9 @@ type IndexQuery = {
   isGroup?: string;
   status?: string;
 };
+
+const truncateName = (name?: string): string | undefined =>
+  name ? `${name.substring(0, 2)}**` : undefined;
 
 export const getBlockStatus = async (
   req: Request,
@@ -147,7 +153,7 @@ export const blockContact = async (
   await createActivityLog({
     userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
     action: ActivityActions.UPDATE,
-    description: `Contato ${contact.name} (${contact.number}) bloqueado no WhatsApp (sessão ${sessionId})`,
+    description: `Contato ID ${contact.id} (${truncateName(contact.name)}) bloqueado no WhatsApp (sessão ${sessionId})`,
     entityType: EntityTypes.CONTACT,
     entityId: contact.id,
     ip: clientIp,
@@ -211,12 +217,14 @@ export const unblockContact = async (
   }
 
   const logUserId = req.user?.id || 1;
+  const clientIp = GetClientIp(req);
   await createActivityLog({
     userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
     action: ActivityActions.UPDATE,
-    description: `Contato ${contact.name} (${contact.number}) desbloqueado no WhatsApp (sessão ${sessionId})`,
+    description: `Contato ID ${contact.id} (${truncateName(contact.name)}) desbloqueado no WhatsApp (sessão ${sessionId})`,
     entityType: EntityTypes.CONTACT,
     entityId: contact.id,
+    ip: clientIp,
     additionalData: { whatsappId: sessionId }
   });
 
@@ -271,7 +279,12 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     status
   });
 
-  return res.json({ contacts, count, hasMore });
+  const serializedContacts = serializeContacts(
+    contacts.map(contact => contact.toJSON()),
+    req.user.profile
+  );
+
+  return res.json({ contacts: serializedContacts, count, hasMore });
 };
 
 export const getContact = async (
@@ -390,24 +403,29 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   });
 
   const logUserId = req.user?.id || 1;
+  const clientIp = GetClientIp(req);
 
   await createActivityLog({
     userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
     action: ActivityActions.CREATE,
-    description: `Contato ${contact.name} (${contact.number}) criado`,
+    description: `Contato ID ${contact.id} (${truncateName(contact.name)}) criado`,
     entityType: EntityTypes.CONTACT,
     entityId: contact.id,
+    ip: clientIp,
     additionalData: {
-      name: contact.name,
-      number: contact.number,
-      email: contact.email
+      contactId: contact.id,
+      nameTruncated: truncateName(contact.name)
     }
   });
 
-  const io = getIO();
-  io.emit("contact", {
-    action: "create",
-    contact
+  const contactJson = contact.toJSON ? contact.toJSON() : contact;
+  await emitMaskedToSockets({
+    io: getIO(),
+    event: "contact",
+    buildPayload: profile => ({
+      action: "create",
+      contact: serializeContact(contactJson, profile)
+    })
   });
 
   return res.status(200).json(contact);
@@ -416,7 +434,9 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { contactId } = req.params;
   const contact = await ShowContactService(contactId);
-  return res.status(200).json(contact);
+  return res
+    .status(200)
+    .json(serializeContact(contact.toJSON(), req.user.profile));
 };
 
 export const update = async (
@@ -424,6 +444,14 @@ export const update = async (
   res: Response
 ): Promise<Response> => {
   const contactData: ContactData = req.body;
+
+  if (
+    contactData.number !== undefined &&
+    req.user.profile !== "admin" &&
+    req.user.profile !== "masteradmin"
+  ) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
 
   const schema = Yup.object().shape({
     name: Yup.string()
@@ -447,20 +475,30 @@ export const update = async (
 
   const contact = await UpdateContactService({ contactData, contactId });
   const logUserId = req.user?.id || 1;
+  const clientIp = GetClientIp(req);
 
   await createActivityLog({
     userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
     action: ActivityActions.UPDATE,
-    description: `Contato ${contact.name} (${contact.number}) atualizado`,
+    description: `Contato ID ${contact.id} (${truncateName(contact.name)}) atualizado`,
     entityType: EntityTypes.CONTACT,
     entityId: contact.id,
-    additionalData: contactData
+    ip: clientIp,
+    additionalData: {
+      contactId: contact.id,
+      nameTruncated: truncateName(contact.name),
+      fieldsUpdated: Object.keys(contactData)
+    }
   });
 
-  const io = getIO();
-  io.emit("contact", {
-    action: "update",
-    contact
+  const contactJson = contact.toJSON ? contact.toJSON() : contact;
+  await emitMaskedToSockets({
+    io: getIO(),
+    event: "contact",
+    buildPayload: profile => ({
+      action: "update",
+      contact: serializeContact(contactJson, profile)
+    })
   });
 
   return res.status(200).json(contact);
@@ -472,21 +510,21 @@ export const remove = async (
 ): Promise<Response> => {
   const { contactId } = req.params;
 
-  const contactToDelete = await ShowContactService(contactId);
+  await ShowContactService(contactId);
 
   await DeleteContactService(contactId);
   const logUserId = req.user?.id || 1;
+  const clientIp = GetClientIp(req);
 
   await createActivityLog({
     userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
     action: ActivityActions.DELETE,
-    description: `Contato ${contactToDelete.name} (${contactToDelete.number}) excluído`,
+    description: "Contato excluído",
     entityType: EntityTypes.CONTACT,
     entityId: parseInt(contactId),
+    ip: clientIp,
     additionalData: {
-      name: contactToDelete.name,
-      number: contactToDelete.number,
-      email: contactToDelete.email
+      contactId: parseInt(contactId)
     }
   });
 
@@ -557,25 +595,30 @@ export const updateTags = async (
   });
 
   const logUserId = req.user?.id || 1;
+  const clientIp = GetClientIp(req);
 
   if (contact) {
     await createActivityLog({
       userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
       action: ActivityActions.UPDATE,
-      description: `Tags do contato ${contact.name} atualizadas`,
+      description: `Tags do contato ID ${contact.id} (${truncateName(contact.name)}) atualizadas`,
       entityType: EntityTypes.CONTACT,
       entityId: contact.id,
+      ip: clientIp,
       additionalData: {
         tags: tags.map((tag: { id: number }) => ({ id: tag.id }))
       }
     });
   }
 
-  const io = getIO();
   const contactData = contact?.toJSON ? contact.toJSON() : contact;
-  io.emit("contact", {
-    action: "update",
-    contact: contactData
+  await emitMaskedToSockets({
+    io: getIO(),
+    event: "contact",
+    buildPayload: profile => ({
+      action: "update",
+      contact: contactData ? serializeContact(contactData, profile) : contactData
+    })
   });
 
   return res.status(200).json(contact);
@@ -593,20 +636,26 @@ export const removeTag = async (
   });
 
   const logUserId = req.user?.id || 1;
+  const clientIp = GetClientIp(req);
 
   await createActivityLog({
     userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
     action: ActivityActions.UPDATE,
-    description: `Tag ${tagId} removida do contato ${contact.name}`,
+    description: `Tag ${tagId} removida do contato ID ${contact.id} (${truncateName(contact.name)})`,
     entityType: EntityTypes.CONTACT,
     entityId: contact.id,
+    ip: clientIp,
     additionalData: { tagId: +tagId }
   });
 
-  const io = getIO();
-  io.emit("contact", {
-    action: "update",
-    contact: contact.toJSON ? contact.toJSON() : contact
+  const contactJson = contact.toJSON ? contact.toJSON() : contact;
+  await emitMaskedToSockets({
+    io: getIO(),
+    event: "contact",
+    buildPayload: profile => ({
+      action: "update",
+      contact: serializeContact(contactJson, profile)
+    })
   });
 
   return res.status(200).json({ message: "Tag removida com sucesso", contact });
@@ -706,6 +755,41 @@ export const exportContacts = async (
   } catch (err) {
     logger.error(`Erro ao exportar contatos: ${err}`);
     return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const exportContactData = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  if (req.user.profile !== "admin" && req.user.profile !== "masteradmin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
+  const { contactId } = req.params;
+  const logUserId = req.user?.id || 1;
+  const clientIp = GetClientIp(req);
+
+  try {
+    const exportData = await ExportContactDataService(contactId);
+
+    await createActivityLog({
+      userId: typeof logUserId === "string" ? parseInt(logUserId) : logUserId,
+      action: ActivityActions.EXPORT,
+      description: "Dados do contato exportados (titular de dados)",
+      entityType: EntityTypes.CONTACT,
+      entityId: parseInt(contactId),
+      ip: clientIp,
+      additionalData: { contactId: parseInt(contactId) }
+    });
+
+    return res.status(200).json(exportData);
+  } catch (err: unknown) {
+    if (err instanceof AppError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    logger.error(`Erro ao exportar dados do contato ${contactId}: ${err}`);
+    return res.status(500).json({ error: "ERR_INTERNAL_SERVER_ERROR" });
   }
 };
 

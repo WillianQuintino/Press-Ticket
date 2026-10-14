@@ -1,4 +1,5 @@
 import { downloadFiles } from "../../helpers/downloadHubFiles";
+import { sanitizeMessageBody } from "../../helpers/sanitizeMessageBody";
 import Contact from "../../models/Contact";
 import Whatsapp from "../../models/Whatsapp";
 import FindOrCreateTicketService from "../TicketServices/FindOrCreateTicketService";
@@ -7,6 +8,8 @@ import FindOrCreateContactService from "./FindOrCreateHubContactService";
 import { UpdateMessageAck } from "./UpdateMessageHubAck";
 import { logger } from "../../utils/logger";
 import { getIO } from "../../libs/socket";
+import { withSerializedContact } from "../../helpers/serializeContact";
+import emitMaskedToSockets from "../../helpers/emitMaskedToSockets";
 
 export interface IContent {
   type:
@@ -208,7 +211,9 @@ const HubMessageListener = async (
       groupContact
     );
 
-    const textCaption = contents.find(c => c.type === "text")?.text || "";
+    const textCaption = sanitizeMessageBody(
+      contents.find(c => c.type === "text")?.text || ""
+    );
     const firstContent = contents[0];
     let caption: string;
     if (
@@ -252,14 +257,16 @@ const HubMessageListener = async (
         ]
       });
 
-      const io = getIO();
-      io.to(ticket.status)
-        .to("notification")
-        .to(ticket.id.toString())
-        .emit("ticket", {
+      const ticketJson = ticket.toJSON() as unknown as Record<string, unknown>;
+      await emitMaskedToSockets({
+        io: getIO(),
+        rooms: [ticket.status, "notification", ticket.id.toString()],
+        event: "ticket",
+        buildPayload: profile => ({
           action: "update",
-          ticket
-        });
+          ticket: withSerializedContact(ticketJson, profile)
+        })
+      });
     }
 
     if (contents[0]?.type === "text" || contents[0]?.type === "reply_text") {
@@ -288,8 +295,8 @@ const HubMessageListener = async (
     } else if (contents[0]?.type === "location") {
       const loc = contents[0];
       const parts: string[] = ["📍 Localização"];
-      if (loc.name) parts.push(loc.name);
-      if (loc.address) parts.push(loc.address);
+      if (loc.name) parts.push(sanitizeMessageBody(loc.name));
+      if (loc.address) parts.push(sanitizeMessageBody(loc.address));
       if (loc.latitude != null && loc.longitude != null) {
         parts.push(
           `https://maps.google.com/?q=${loc.latitude},${loc.longitude}`

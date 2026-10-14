@@ -97,9 +97,16 @@ const messages = {
         toasts: {
           deleted: "Contact deleted successfully!",
           deletedAll: "All contacts deleted successfully!",
+          redirectTicket: "You already have an open ticket for this contact. Redirecting...",
+          exportSuccess: "Contacts exported successfully!",
+          noContactsToExport: "There are no contacts to export.",
+          blocked: "Contact blocked on WhatsApp",
+          unblocked: "Contact unblocked on WhatsApp",
+          importSuccess: "Contacts synced successfully!"
         },
         errors: {
-          "ticketAlreadyOpen": "There is already an open ticket for this contact, assigned to {{atendente}}."
+          ticketAlreadyOpen: "There is already an open ticket for this contact, assigned to Agent: *{{userName}}* on Channel: *{{userChannel}}* created at: *{{ticketCreatedAt}}*.",
+          exportError: "Error exporting contacts."
         },
         searchPlaceholder: "Search...",
         confirmationModal: {
@@ -131,9 +138,98 @@ const messages = {
         },
         extraInfo: "Other information",
       },
+      groupActions: {
+        selectContacts: "Select contacts",
+        title: "Group Actions",
+        buttons: {
+          add: "Add participants",
+          remove: "Remove participants",
+          promote: "Promote admins",
+          demote: "Demote admins",
+          getInvite: "Copy invite link",
+          revokeInvite: "Revoke link",
+          subject: "Change title",
+          description: "Change description",
+          setPicture: "Change picture",
+          deletePicture: "Remove picture",
+          leave: "Leave group",
+          listRequests: "List requests",
+          approveRequests: "Approve requests",
+          rejectRequests: "Reject requests"
+        },
+        switches: {
+          memberAddMode: "Only admins can add members",
+          announcement: "Only admins can send messages",
+          restrict: "Only admins can edit group info"
+        },
+        prompts: {
+          participantsPlaceholder: "Enter comma-separated IDs (e.g.: 5511999999999@c.us)",
+          requestersPlaceholder: "Enter requester IDs (optional, comma-separated)",
+          subject: "New group subject:",
+          description: "New group description:",
+          pictureUrl: "Image URL (will be downloaded and sent as the group picture)"
+        },
+        messages: {
+          addOk: "Participants added (or invited).",
+          addErr: "Error adding participants.",
+          addPartialSuccess: "{{success}} added, {{invited}} invite(s) sent, {{failed}} failed",
+          addInviteOnly: "{{invited}} invite(s) sent via private link",
+          addFailCode: "code {{code}}",
+          removeOk: "Participants removed.",
+          removeErr: "Error removing participants.",
+          promoteOk: "Participants promoted to admin.",
+          promoteErr: "Error promoting participants.",
+          demoteOk: "Participants demoted.",
+          demoteErr: "Error demoting participants.",
+          inviteCopied: "Invite link copied to clipboard.",
+          inviteErr: "Error getting invite link.",
+          inviteNone: "Could not get the invite code.",
+          inviteRevoked: "New link generated and copied.",
+          inviteRevokeErr: "Error revoking invite link.",
+          settingsOk: "Settings updated.",
+          settingsErr: "Error updating settings.",
+          subjectOk: "Subject updated.",
+          subjectErr: "Error updating subject.",
+          descriptionOk: "Description updated.",
+          descriptionErr: "Error updating description.",
+          pictureOk: "Group picture updated.",
+          pictureErr: "Error updating group picture.",
+          pictureDelOk: "Group picture removed.",
+          pictureDelErr: "Error removing group picture.",
+          leaveOk: "Left the group.",
+          leaveErr: "Error leaving group.",
+          noRequests: "No pending requests.",
+          requestsErr: "Error listing requests.",
+          requestsApproveOk: "Requests approved.",
+          requestsApproveErr: "Error approving requests.",
+          requestsRejectOk: "Requests rejected.",
+          requestsRejectErr: "Error rejecting requests."
+        },
+        modals: {
+          subjectTitle: "Change Group Name",
+          subjectLabel: "Group name",
+          descriptionTitle: "Change Group Description",
+          descriptionLabel: "Group description",
+          removeTitle: "Remove Participants",
+          promoteTitle: "Promote to Admin",
+          demoteTitle: "Demote Admin",
+          owner: "Owner",
+          admin: "Admin",
+          noMembers: "No members found",
+          save: "Save",
+          cancel: "Cancel",
+        }
+      },
       copyToClipboard: {
         copy: "Copy",
         copied: "Copied"
+      },
+      socketStatus: {
+        connected: "Connected",
+        disconnected: "Disconnected",
+        disconnectedMessage: "Real-time connection lost. Trying to reconnect...",
+        reconnectedMessage: "Real-time connection restored.",
+        serverErrorMessage: "Error received from the real-time server."
       },
       dashboard: {
         messages: {
@@ -249,6 +345,8 @@ const messages = {
           submit: "Login",
           register: "Don't have an account? Sign up!",
         },
+        accountLocked: "Account temporarily locked",
+        tooManyRequests: "Too many login attempts",
       },
       mainDrawer: {
         listItems: {
@@ -329,6 +427,62 @@ const messages = {
           ticket_id: "Ticket ID",
           queue: "Sector",
           connection: "Channel"
+        }
+      },
+      modalImageContact: {
+        alt: "Contact image",
+        toolBar: {
+          rotateLeft: "Rotate left",
+          rotateRight: "Rotate right",
+          zoomIn: "Zoom in",
+          zoomOut: "Zoom out",
+          resetZoom: "Reset zoom",
+          fullscreen: "Fullscreen",
+          fullscreenExit: "Exit fullscreen",
+          copyLink: "Copy link",
+          download: "Download image"
+        },
+        snackbar: {
+          copyLinkSuccess: "Link copied successfully!",
+          copyLinkError: "Error copying link. Please try again.",
+        }
+      },
+      modalImageCors: {
+        alt: "Contact image",
+        error: {
+          loadImage: "Error loading image"
+        },
+        navigation: {
+          previous: "Previous image",
+          next: "Next image"
+        },
+        button: {
+          applyCrop: "Apply",
+          cancelCrop: "Cancel"
+        },
+        dragToCrop: "Drag to select the crop area",
+        toolBar: {
+          rotateLeft: "Rotate left",
+          rotateRight: "Rotate right",
+          zoomIn: "Zoom in",
+          zoomOut: "Zoom out",
+          resetZoom: "Reset zoom",
+          fullscreen: "Fullscreen",
+          exitFullscreen: "Exit fullscreen",
+          copyLink: "Copy link",
+          download: "Download image",
+          cancelCrop: "Cancel crop",
+          cropImage: "Crop image",
+          disableCompare: "Disable comparison",
+          compareImages: "Compare images",
+          downloadImage: "Download image"
+        },
+        snackbar: {
+          copyLinkSuccess: "Link copied successfully!",
+          copyLinkError: "Error copying link. Please try again.",
+          cropSuccess: "Image cropped successfully!",
+          cropError: "Error cropping image. Please try again.",
+          invalidCropArea: "Select a valid area to crop"
         }
       },
       newTicketModal: {
@@ -487,6 +641,12 @@ const messages = {
           generic: "Error resetting password. Try again."
         }
       },
+      passwordStrength: {
+        weak: "Weak password",
+        medium: "Medium password",
+        strong: "Strong password",
+        requirements: "Password must have at least 8 characters, one uppercase, one lowercase, one number and one special character.",
+      },
       settings: {
         success: "Settings saved successfully.",
         tabs: {
@@ -634,19 +794,37 @@ const messages = {
               "2592000": "30 days",
             },
           },
+          inactivityTimeout: {
+            name: "Inactivity timeout:",
+            note: "Time without agent interaction before automatic logout due to inactivity",
+            options: {
+              "0": "Disabled",
+              "15": "15 minutes",
+              "30": "30 minutes (default)",
+              "60": "1 hour",
+              "120": "2 hours",
+            },
+          },
         },
         personalize: {
           success: {
             company: "Company data saved successfully!",
             logos: "Logos saved successfully!",
             colors: "Colors saved successfully!",
+            logoRemoved: "Logo removed successfully!",
+            colorsTheme: "{{theme}} theme colors saved successfully!",
           },
           error: {
             invalid: "Error fetching customizations.",
             company: "Error saving company data.",
             logos: "Error saving the logo.",
+            logoRemove: "Error removing logo. Please try again.",
             logs: "Error saving customization:",
             colors: "Error saving theme colors: "
+          },
+          info: {
+            uploadingLogo: "Uploading image...",
+            deletingLogo: "Removing logo...",
           },
           tabs: {
             data: "Data",
@@ -671,6 +849,18 @@ const messages = {
             }
           },
         }
+      },
+      sessionExpiredModal: {
+        title: "Session Ended",
+        message: "Your session has ended. Click confirm to be redirected to the login screen.",
+        confirm: "Confirm",
+      },
+      inactivity: {
+        warningTitle: "Session about to expire",
+        warningMessage: "You will be logged out in {{time}} due to inactivity. Do you want to stay connected?",
+        continueSession: "Stay connected",
+        logoutNow: "Log out now",
+        sessionExpiredToast: "Session ended due to inactivity.",
       },
       signup: {
         title: "Sign up",
@@ -801,7 +991,7 @@ const messages = {
           queue: "Select sector"
         },
         errors: {
-          ticketAlreadyOpen: "There is already an open ticket for this contact with agent {{atendente}}."
+          ticketAlreadyOpen: "There is already an open ticket for this contact, assigned to Agent: *{{userName}}* on Channel: *{{userChannel}}* created at: *{{ticketCreatedAt}}*."
         }
       },
       ticketOptionsMenu: {
@@ -838,6 +1028,7 @@ const messages = {
         },
         buttons: {
           add: "Add agent",
+          close: "Close",
         },
         modalTitle: {
           channel: "Channels",
@@ -856,6 +1047,20 @@ const messages = {
           deleteMessage: "All data for this agent will be lost. Tickets opened by this agent will be moved to pending.",
         },
       },
+      lockedUsers: {
+        title: "Locked Accounts",
+        empty: "No locked accounts at the moment.",
+        columns: {
+          name: "Name",
+          email: "Email",
+          lockedUntil: "Locked until",
+          lockCount: "Lock count",
+          actions: "Actions"
+        },
+        unlock: "Unlock",
+        unlockSuccess: "Account unlocked successfully.",
+        unlockError: "Error unlocking account. Please try again."
+      },
       userModal: {
         title: {
           add: "Add agent",
@@ -865,6 +1070,8 @@ const messages = {
           name: "Name",
           email: "Email",
           password: "Password",
+          currentPassword: "Current password",
+          currentPasswordPlaceholder: "Enter your current password to confirm",
           profile: "Profile",
           admin: "Administrator",
           user: "Agent",
@@ -882,6 +1089,7 @@ const messages = {
           cancel: "Cancel",
         },
         success: "Agent saved successfully.",
+        passwordChanged: "Password changed successfully.",
       },
       whatsappModal: {
         title: {
@@ -930,6 +1138,14 @@ const messages = {
         newVersionAvailable: "New version {{version}} available on GitHub. Click 'Update via Git' to update.",
         commitsAheadOfRelease: "Your system has {{count}} commit(s) beyond the latest official release.",
       },
+      errors: {
+        unauthorized: "Your session has expired. Please log in again.",
+        forbidden: "You do not have permission to perform this action.",
+        notFound: "Resource not found.",
+        conflict: "A record with this data already exists.",
+        serverError: "Internal server error. Please try again later.",
+        networkError: "No connection to the server. Check your internet and try again."
+      },
       backendErrors: {
         ERR_CREATING_MESSAGE: "Error creating message in the database.",
         ERR_CREATING_TICKET: "Error creating ticket in the database.",
@@ -939,6 +1155,13 @@ const messages = {
         ERR_EDITING_WAPP_MSG: "Could not edit WhatsApp message.",
         ERR_FETCH_WAPP_MSG: "Error fetching message from WhatsApp, it may be too old.",
         ERR_INVALID_CREDENTIALS: "Authentication error. Please try again.",
+        ERR_INVALID_PASSWORD: "Current password is incorrect.",
+        ERR_PASSWORD_REQUIRED: "Please enter a password.",
+        ERR_PASSWORD_MIN_LENGTH: "Password must be at least 8 characters.",
+        ERR_PASSWORD_UPPERCASE: "Password must contain at least one uppercase letter.",
+        ERR_PASSWORD_LOWERCASE: "Password must contain at least one lowercase letter.",
+        ERR_PASSWORD_NUMBER: "Password must contain at least one number.",
+        ERR_PASSWORD_SPECIAL: "Password must contain at least one special character (!@#$%^&*...).",
         ERR_NO_CONTACT_FOUND: "No contact found with this ID.",
         ERR_NO_DEF_WAPP_FOUND: "No default WhatsApp found. Check the channels page.",
         ERR_NO_INTEGRATION_FOUND: "Integration not found.",

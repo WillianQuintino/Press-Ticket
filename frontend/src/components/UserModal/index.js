@@ -1,4 +1,5 @@
 import {
+	Box,
 	Button,
 	CircularProgress,
 	Dialog,
@@ -9,6 +10,7 @@ import {
 	IconButton,
 	InputAdornment,
 	InputLabel,
+	LinearProgress,
 	MenuItem,
 	Select,
 	TextField,
@@ -31,6 +33,7 @@ import {
 import {
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState
 } from "react";
@@ -113,12 +116,39 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 	},
 }));
 
-const UserSchema = Yup.object().shape({
+const PASSWORD_SPECIAL_CHARS_REGEX = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/;
+
+/**
+ * Calcula a força da senha com base nas mesmas regras do backend.
+ * Retorna: 0 = inválida, 1 = fraca, 2 = média, 3 = forte
+ */
+const getPasswordStrength = (password) => {
+	if (!password) return 0;
+
+	let score = 0;
+	if (password.length >= 8) score++;
+	if (/[A-Z]/.test(password)) score++;
+	if (/[a-z]/.test(password)) score++;
+	if (/[0-9]/.test(password)) score++;
+	if (PASSWORD_SPECIAL_CHARS_REGEX.test(password)) score++;
+
+	if (score <= 2) return 1; // fraca
+	if (score <= 4) return 2; // média
+	return 3;                  // forte (todos os 5 critérios)
+};
+
+const buildUserSchema = (t) => Yup.object().shape({
 	name: Yup.string()
 		.min(2, "Too Short!")
 		.max(50, "Too Long!")
 		.required("Required"),
-	password: Yup.string().min(5, "Too Short!").max(50, "Too Long!"),
+	password: Yup.string()
+		.max(50, "Too Long!")
+		.test("password-min-length", t("backendErrors.ERR_PASSWORD_MIN_LENGTH"), value => !value || value.length >= 8)
+		.test("password-uppercase", t("backendErrors.ERR_PASSWORD_UPPERCASE"), value => !value || /[A-Z]/.test(value))
+		.test("password-lowercase", t("backendErrors.ERR_PASSWORD_LOWERCASE"), value => !value || /[a-z]/.test(value))
+		.test("password-number", t("backendErrors.ERR_PASSWORD_NUMBER"), value => !value || /[0-9]/.test(value))
+		.test("password-special", t("backendErrors.ERR_PASSWORD_SPECIAL"), value => !value || PASSWORD_SPECIAL_CHARS_REGEX.test(value)),
 	email: Yup.string().email("Invalid email").required("Required"),
 	whatsappNumber: Yup.string()
 		.nullable()
@@ -132,6 +162,7 @@ const UserModal = ({ open, onClose, userId }) => {
 		name: "",
 		email: "",
 		password: "",
+		currentPassword: "",
 		profile: "user",
 		startWork: "00:00",
 		endWork: "23:59",
@@ -144,8 +175,22 @@ const UserModal = ({ open, onClose, userId }) => {
 	const [selectedQueueIds, setSelectedQueueIds] = useState([]);
 	const [selectedWhatsappIds, setSelectedWhatsappIds] = useState([]);
 	const [showPassword, setShowPassword] = useState(false);
+	const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 	const startWorkRef = useRef();
 	const endWorkRef = useRef();
+
+	const isSelfEdit = Boolean(userId) && Boolean(loggedInUser?.id) && String(loggedInUser.id) === String(userId);
+
+	const validationSchema = useMemo(() => {
+		const schema = buildUserSchema(t);
+		if (!isSelfEdit) return schema;
+		return schema.shape({
+			currentPassword: Yup.string().when("password", {
+				is: password => Boolean(password),
+				then: schema => schema.required("Required"),
+			}),
+		});
+	}, [isSelfEdit, t]);
 
 	useEffect(() => {
 		const fetchUser = async () => {
@@ -172,8 +217,12 @@ const UserModal = ({ open, onClose, userId }) => {
 		setUser(initialState);
 	};
 
-	const handleSaveUser = async values => {
-		const userData = { ...values, whatsappIds: selectedWhatsappIds, queueIds: selectedQueueIds };
+	const handleSaveUser = async (values, { setFieldError } = {}) => {
+		const { currentPassword, ...rest } = values;
+		const userData = { ...rest, whatsappIds: selectedWhatsappIds, queueIds: selectedQueueIds };
+		if (isSelfEdit && currentPassword) {
+			userData.currentPassword = currentPassword;
+		}
 		try {
 			let response;
 			if (userId) {
@@ -181,14 +230,27 @@ const UserModal = ({ open, onClose, userId }) => {
 			} else {
 				response = await api.post("/users", userData);
 			}
-			toast.success(t("userModal.success"));
+
+			if (response?.data?.token) {
+				localStorage.setItem("token", JSON.stringify(response.data.token));
+				api.defaults.headers.Authorization = `Bearer ${response.data.token}`;
+				toast.success(t("userModal.passwordChanged"));
+			} else {
+				toast.success(t("userModal.success"));
+			}
+
 			if (onClose) {
 				onClose(response.data);
 			}
+			handleClose();
 		} catch (err) {
+			if (err?.response?.data?.error === "ERR_INVALID_PASSWORD" && setFieldError) {
+				setFieldError("currentPassword", t("backendErrors.ERR_INVALID_PASSWORD"));
+				return;
+			}
 			toastError(err, t);
+			handleClose();
 		}
-		handleClose();
 	};
 
 	return (
@@ -218,15 +280,15 @@ const UserModal = ({ open, onClose, userId }) => {
 				<Formik
 					initialValues={user}
 					enableReinitialize={true}
-					validationSchema={UserSchema}
+					validationSchema={validationSchema}
 					onSubmit={(values, actions) => {
 						setTimeout(() => {
-							handleSaveUser(values);
+							handleSaveUser(values, actions);
 							actions.setSubmitting(false);
 						}, 400);
 					}}
 				>
-					{({ touched, errors, isSubmitting }) => (
+					{({ touched, errors, isSubmitting, values }) => (
 						<Form>
 							<DialogContent dividers>
 								<MultFieldLine>
@@ -272,6 +334,66 @@ const UserModal = ({ open, onClose, userId }) => {
 										fullWidth
 									/>
 								</MultFieldLine>
+								{values.password && (
+									<Box sx={{ mt: 0.5, mb: 1 }}>
+										<LinearProgress
+											variant="determinate"
+											value={(getPasswordStrength(values.password) / 3) * 100}
+											sx={{
+												height: 4,
+												borderRadius: 2,
+												"& .MuiLinearProgress-bar": {
+													backgroundColor:
+														getPasswordStrength(values.password) === 1 ? "error.main" :
+														getPasswordStrength(values.password) === 2 ? "warning.main" :
+														"success.main",
+												},
+											}}
+										/>
+										<Typography variant="caption" color={
+											getPasswordStrength(values.password) === 1 ? "error" :
+											getPasswordStrength(values.password) === 2 ? "warning.main" :
+											"success.main"
+										}>
+											{getPasswordStrength(values.password) === 1 && t("passwordStrength.weak")}
+											{getPasswordStrength(values.password) === 2 && t("passwordStrength.medium")}
+											{getPasswordStrength(values.password) === 3 && t("passwordStrength.strong")}
+										</Typography>
+									</Box>
+								)}
+								{isSelfEdit && values.password && (
+									<MultFieldLine>
+										<Field
+											as={StyledTextField}
+											name="currentPassword"
+											variant="outlined"
+											margin="dense"
+											label={t("userModal.form.currentPassword")}
+											error={touched.currentPassword && Boolean(errors.currentPassword)}
+											helperText={touched.currentPassword && errors.currentPassword}
+											type={showCurrentPassword ? "text" : "password"}
+											placeholder={t("userModal.form.currentPasswordPlaceholder")}
+											InputProps={{
+												sx: { borderRadius: 8 },
+												endAdornment: (
+													<InputAdornment position="end">
+														<Tooltip title={t("userModal.form.toggleVisibility")} arrow placement="top">
+															<IconButton
+																aria-label="toggle current password visibility"
+																onClick={() => setShowCurrentPassword((e) => !e)}
+																size="small"
+																color="primary"
+															>
+																{showCurrentPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+															</IconButton>
+														</Tooltip>
+													</InputAdornment>
+												)
+											}}
+											fullWidth
+										/>
+									</MultFieldLine>
+								)}
 								<MultFieldLine>
 									<Field
 										as={StyledTextField}

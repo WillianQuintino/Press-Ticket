@@ -88,6 +88,17 @@ class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   @Column(DataType.DATE)
   lastLoginAt: CreationOptional<Date>;
 
+  @Default(0)
+  @Column(DataType.INTEGER)
+  loginAttempts: CreationOptional<number>;
+
+  @Column(DataType.DATE)
+  lockedUntil: Date | null;
+
+  @Default(0)
+  @Column(DataType.INTEGER)
+  lockCount: CreationOptional<number>;
+
   @CreatedAt
   declare createdAt: CreationOptional<Date>;
 
@@ -107,7 +118,7 @@ class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   @BeforeCreate
   static hashPassword = async (instance: User): Promise<void> => {
     if (instance.password) {
-      instance.passwordHash = await hash(instance.password, 8);
+      instance.passwordHash = await hash(instance.password, 10);
     }
   };
 
